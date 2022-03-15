@@ -3,6 +3,7 @@ Implementation of the protocol used by zx303 GPS+GPRS module
 Description from https://github.com/tobadia/petGPS/tree/master/resources
 """
 
+from datetime import datetime
 from inspect import isclass
 from logging import getLogger
 from struct import pack, unpack
@@ -81,11 +82,24 @@ class HEARTBEAT(_GT06pkt):
     PROTO = 0x08
 
 
-class GPS_POSITIONING(_GT06pkt):
+class _GPS_POSITIONING(_GT06pkt):
+
+    @classmethod
+    def from_packet(cls, length, proto, payload):
+        self = super().from_packet(length, proto, payload)
+        self.dtime = payload[:6]
+        # TODO parse the rest
+        return self
+
+    def response(self):
+        return super().response(self.dtime)
+
+
+class GPS_POSITIONING(_GPS_POSITIONING):
     PROTO = 0x10
 
 
-class GPS_OFFLINE_POSITIONING(_GT06pkt):
+class GPS_OFFLINE_POSITIONING(_GPS_POSITIONING):
     PROTO = 0x11
 
 
@@ -123,6 +137,10 @@ class WIFI_OFFLINE_POSITIONING(_GT06pkt):
 
 class TIME(_GT06pkt):
     PROTO = 0x30
+
+    def response(self):
+        payload = pack("!HBBBBB", *datetime.utcnow().timetuple()[:6])
+        return super().response(payload)
 
 
 class MOM_PHONE(_GT06pkt):
@@ -205,6 +223,15 @@ class VIBRATION_RECEIVED(_GT06pkt):
 
 class POSITION_UPLOAD_INTERVAL(_GT06pkt):
     PROTO = 0x98
+
+    @classmethod
+    def from_packet(cls, length, proto, payload):
+        self = super().from_packet(length, proto, payload)
+        self.interval = unpack("!H", payload[:2])
+        return self
+
+    def response(self):
+        return super().response(pack("!H", self.interval))
 
 
 # Build a dict protocol number -> class
