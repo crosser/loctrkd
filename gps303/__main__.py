@@ -1,3 +1,4 @@
+from getopt import getopt
 from logging import getLogger, StreamHandler, DEBUG, INFO
 from logging.handlers import SysLogHandler
 from select import poll, POLLIN, POLLERR, POLLHUP, POLLPRI
@@ -5,13 +6,19 @@ from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 import sys
 from time import time
 
+from .config import readconfig
 from .GT06mod import handle_packet, make_response, LOGIN
 from .evstore import initdb, stow
 
-PORT = 4303
+CONF = "/etc/gps303.conf"
+
 log = getLogger("gps303")
 
 if __name__.endswith("__main__"):
+    opts, _ = getopt(sys.argv[1:], "c:p:")
+    opts = dict(opts)
+    conf = readconfig(opts["c"] if "c" in opts else CONF)
+
     if sys.stdout.isatty():
         log.addHandler(StreamHandler(sys.stderr))
         log.setLevel(DEBUG)
@@ -19,11 +26,11 @@ if __name__.endswith("__main__"):
         log.addHandler(SysLogHandler(address="/dev/log"))
         log.setLevel(INFO)
 
-    initdb("/tmp/gps303.sqlite")
+    initdb(conf.get("daemon", "port"))
 
     ctlsock = socket(AF_INET, SOCK_STREAM)
     ctlsock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    ctlsock.bind(("", PORT))
+    ctlsock.bind(("", conf.getint("daemon", "port")))
     ctlsock.listen(5)
     ctlfd = ctlsock.fileno()
     pollset = poll()
