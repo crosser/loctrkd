@@ -18,6 +18,7 @@ SCHEMA = """create table if not exists events (
 
 def initdb(dbname):
     global DB
+    log.info("Using Sqlite3 database \"%s\"", dbname)
     DB = connect(dbname)
     DB.execute(SCHEMA)
 
@@ -30,7 +31,6 @@ def stow(clntaddr, timestamp, imei, proto, payload):
             (str(clntaddr), timestamp, imei, proto, payload),
         )
     )
-    log.debug("inserting %s", parms)
     DB.execute(
         """insert or ignore into events
                 (timestamp, imei, clntaddr, proto, payload)

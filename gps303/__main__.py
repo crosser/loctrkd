@@ -7,7 +7,7 @@ import sys
 from time import time
 
 from .config import readconfig
-from .GT06mod import handle_packet, make_response, LOGIN
+from .GT06mod import handle_packet, make_response, LOGIN, set_config
 from .evstore import initdb, stow
 
 CONF = "/etc/gps303.conf"
@@ -15,18 +15,19 @@ CONF = "/etc/gps303.conf"
 log = getLogger("gps303")
 
 if __name__.endswith("__main__"):
-    opts, _ = getopt(sys.argv[1:], "c:p:")
+    opts, _ = getopt(sys.argv[1:], "c:d")
     opts = dict(opts)
-    conf = readconfig(opts["c"] if "c" in opts else CONF)
+    conf = readconfig(opts["-c"] if "-c" in opts else CONF)
 
     if sys.stdout.isatty():
         log.addHandler(StreamHandler(sys.stderr))
-        log.setLevel(DEBUG)
     else:
         log.addHandler(SysLogHandler(address="/dev/log"))
-        log.setLevel(INFO)
+    log.setLevel(DEBUG if "-d" in opts else INFO)
+    log.info("starting with options: %s", opts)
 
     initdb(conf.get("daemon", "dbfn"))
+    set_config(conf)
 
     ctlsock = socket(AF_INET, SOCK_STREAM)
     ctlsock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)

@@ -15,6 +15,7 @@ log = getLogger("gps303")
 
 class _GT06pkt:
     PROTO: int
+    CONFIG = None
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
@@ -263,3 +264,6 @@ def handle_packet(packet, addr, when):
 
 def make_response(msg):
     return msg.response()
+
+def set_config(config):  # Note that we are setting _class_ attribute
+    _GT06pkt.CONFIG = config
