@@ -8,7 +8,36 @@ from inspect import isclass
 from logging import getLogger
 from struct import pack, unpack
 
-__all__ = ("handle_packet", "make_response")
+__all__ = (
+    "handle_packet",
+    "make_object",
+    "make_response",
+    "set_config",
+    "UNKNOWN",
+    "LOGIN",
+    "SUPERVISION",
+    "HEARTBEAT",
+    "GPS_POSITIONING",
+    "GPS_OFFLINE_POSITIONING",
+    "STATUS",
+    "HIBERNATION",
+    "RESET",
+    "WHITELIST_TOTAL",
+    "WIFI_OFFLINE_POSITIONING",
+    "TIME",
+    "MOM_PHONE",
+    "STOP_ALARM",
+    "SETUP",
+    "SYNCHRONOUS_WHITELIST",
+    "RESTORE_PASSWORD",
+    "WIFI_POSITIONING",
+    "MANUAL_POSITIONING",
+    "BATTERY_CHARGE",
+    "CHARGER_CONNECTED",
+    "CHARGER_DISCONNECTED",
+    "VIBRATION_RECEIVED",
+    "POSITION_UPLOAD_INTERVAL",
+)
 
 log = getLogger("gps303")
 
@@ -38,13 +67,8 @@ class _GT06pkt:
         )
 
     @classmethod
-    def from_packet(cls, length, proto, payload):
-        adjust = 2 if proto == STATUS.PROTO else 4  # Weird special case
-        if length > 1 and len(payload) + adjust != length:
-            log.warning(
-                "length is %d but payload length is %d", length, len(payload)
-            )
-        return cls(length=length, proto=proto, payload=payload)
+    def from_packet(cls, proto, payload):
+        return cls(proto=proto, payload=payload)
 
     def response(self, *args):
         if len(args) == 0:
@@ -65,8 +89,8 @@ class LOGIN(_GT06pkt):
     PROTO = 0x01
 
     @classmethod
-    def from_packet(cls, length, proto, payload):
-        self = super().from_packet(length, proto, payload)
+    def from_packet(cls, proto, payload):
+        self = super().from_packet(proto, payload)
         self.imei = payload[:-1].hex()
         self.ver = unpack("B", payload[-1:])[0]
         return self
@@ -84,10 +108,9 @@ class HEARTBEAT(_GT06pkt):
 
 
 class _GPS_POSITIONING(_GT06pkt):
-
     @classmethod
-    def from_packet(cls, length, proto, payload):
-        self = super().from_packet(length, proto, payload)
+    def from_packet(cls, proto, payload):
+        self = super().from_packet(proto, payload)
         self.dtime = payload[:6]
         # TODO parse the rest
         return self
@@ -108,8 +131,8 @@ class STATUS(_GT06pkt):
     PROTO = 0x13
 
     @classmethod
-    def from_packet(cls, length, proto, payload):
-        self = super().from_packet(length, proto, payload)
+    def from_packet(cls, proto, payload):
+        self = super().from_packet(proto, payload)
         if len(payload) == 5:
             self.batt, self.ver, self.intvl, self.signal, _ = unpack(
                 "BBBBB", payload
@@ -226,8 +249,8 @@ class POSITION_UPLOAD_INTERVAL(_GT06pkt):
     PROTO = 0x98
 
     @classmethod
-    def from_packet(cls, length, proto, payload):
-        self = super().from_packet(length, proto, payload)
+    def from_packet(cls, proto, payload):
+        self = super().from_packet(proto, payload)
         self.interval = unpack("!H", payload[:2])
         return self
 
@@ -248,22 +271,33 @@ if True:  # just to indent the code, sorry!
         if hasattr(cls, "PROTO"):
             CLASSES[cls.PROTO] = cls
 
+def make_object(proto, payload):
+    if proto in CLASSES:
+        return CLASSES[proto].from_packet(proto, payload)
+    else:
+        return UNKNOWN.from_packet(proto, payload)
 
 def handle_packet(packet, addr, when):
     if len(packet) < 6:
-        msg = UNKNOWN.from_packet(0, 0, packet)
+        return UNKNOWN.from_packet(0, packet)
     else:
         xx, length, proto = unpack("!2sBB", packet[:4])
         crlf = packet[-2:]
         payload = packet[4:-2]
-        if xx != b"xx" or crlf != b"\r\n" or proto not in CLASSES:
-            msg = UNKNOWN.from_packet(length, proto, packet)
+        adjust = 2 if proto == STATUS.PROTO else 4  # Weird special case
+        if length > 1 and len(payload) + adjust != length:
+            log.warning(
+                "length is %d but payload length is %d", length, len(payload)
+            )
+        if xx != b"xx" or crlf != b"\r\n":
+            return UNKNOWN.from_packet(proto, packet)  # full packet as payload
         else:
-            msg = CLASSES[proto].from_packet(length, proto, payload)
-    return msg
+            return make_object(proto, payload)
+
 
 def make_response(msg):
     return msg.response()
+
 
 def set_config(config):  # Note that we are setting _class_ attribute
     _GT06pkt.CONFIG = config
