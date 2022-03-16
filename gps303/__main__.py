@@ -26,7 +26,7 @@ if __name__.endswith("__main__"):
         log.addHandler(SysLogHandler(address="/dev/log"))
         log.setLevel(INFO)
 
-    initdb(conf.get("daemon", "port"))
+    initdb(conf.get("daemon", "dbfn"))
 
     ctlsock = socket(AF_INET, SOCK_STREAM)
     ctlsock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
