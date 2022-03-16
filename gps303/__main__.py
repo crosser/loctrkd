@@ -69,11 +69,18 @@ if __name__.endswith("__main__"):
                     when = time()
                     if packet:
                         msg = handle_packet(packet, clntaddr, when)
-                        log.debug("%s from %s fd %d'", msg, clntaddr, fd)
+                        log.debug("%s from %s fd %d", msg, clntaddr, fd)
                         if isinstance(msg, LOGIN):
                             imei = msg.imei
                             clnt_dict[fd] = (clntsock, clntaddr, imei)
-                        stow(clntaddr, when, imei, msg.proto, msg.payload)
+                        stow(
+                            clntaddr,
+                            when,
+                            imei,
+                            msg.length,
+                            msg.proto,
+                            msg.payload,
+                        )
                         response = make_response(msg)
                         if response:
                             try:

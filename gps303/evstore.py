@@ -11,6 +11,7 @@ SCHEMA = """create table if not exists events (
     timestamp real not null,
     imei text,
     clntaddr text not null,
+    length int,
     proto int not null,
     payload blob
 )"""
@@ -18,23 +19,25 @@ SCHEMA = """create table if not exists events (
 
 def initdb(dbname):
     global DB
-    log.info("Using Sqlite3 database \"%s\"", dbname)
+    log.info('Using Sqlite3 database "%s"', dbname)
     DB = connect(dbname)
     DB.execute(SCHEMA)
 
 
-def stow(clntaddr, timestamp, imei, proto, payload):
+def stow(clntaddr, timestamp, imei, length, proto, payload):
     assert DB is not None
     parms = dict(
         zip(
-            ("clntaddr", "timestamp", "imei", "proto", "payload"),
-            (str(clntaddr), timestamp, imei, proto, payload),
+            ("clntaddr", "timestamp", "imei", "length", "proto", "payload"),
+            (str(clntaddr), timestamp, imei, length, proto, payload),
         )
     )
     DB.execute(
         """insert or ignore into events
-                (timestamp, imei, clntaddr, proto, payload)
-                values (:timestamp, :imei, :clntaddr, :proto, :payload)""",
+                (timestamp, imei, clntaddr, length, proto, payload)
+                values
+                (:timestamp, :imei, :clntaddr, :length, :proto, :payload)
+        """,
         parms,
     )
     DB.commit()
