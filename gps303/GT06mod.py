@@ -99,8 +99,14 @@ class LOGIN(_GT06pkt):
         return super().response(b"")
 
 
-class SUPERVISION(_GT06pkt):
+class SUPERVISION(_GT06pkt):  # Server sends supervision number status
     PROTO = 0x05
+
+    def response(self, supnum=0):
+        # 1: The device automatically answers Pickup effect
+        # 2: Automatically Answering Two-way Calls
+        # 3: Ring manually answer the two-way call
+        return super().response(b"")
 
 
 class HEARTBEAT(_GT06pkt):
@@ -150,25 +156,40 @@ class STATUS(_GT06pkt):
     def from_packet(cls, length, proto, payload):
         self = super().from_packet(length, proto, payload)
         if len(payload) == 5:
-            self.batt, self.ver, self.intvl, self.signal, _ = unpack(
-                "BBBBB", payload
-            )
+            (
+                self.batt,
+                self.ver,
+                self.timezone,
+                self.intvl,
+                self.signal,
+            ) = unpack("BBBBB", payload)
         elif len(payload) == 4:
-            self.batt, self.ver, self.intvl, _ = unpack("BBBB", payload)
+            self.batt, self.ver, self.timezone, self.intvl = unpack(
+                "BBBB", payload
+            )
             self.signal = None
         return self
+
+    def response(self, upload_interval=25):  # Set interval in minutes
+        return super().response(pack("B", upload_interval))
 
 
 class HIBERNATION(_GT06pkt):
     PROTO = 0x14
 
 
-class RESET(_GT06pkt):
+class RESET(_GT06pkt):  # Device sends when it got reset SMS
     PROTO = 0x15
 
+    def response(self):  # Server can send to initiate factory reset
+        return super().response(b"")
 
-class WHITELIST_TOTAL(_GT06pkt):
+
+class WHITELIST_TOTAL(_GT06pkt):  # Server sends to initiage sync (0x58)
     PROTO = 0x16
+
+    def response(self, number=3):  # Number of whitelist entries
+        return super().response(pack("B", number))
 
 
 class _WIFI_POSITIONING(_GT06pkt):
@@ -215,8 +236,22 @@ class TIME(_GT06pkt):
         return super().response(payload)
 
 
+class PROHIBIT_LBS(_GT06pkt):
+    PROTO = 0x33
+
+    def response(self, status=1):  # Server sent, 0-off, 1-on
+        return super().response(pack("B", status))
+
+
 class MOM_PHONE(_GT06pkt):
     PROTO = 0x43
+
+
+class STOP_UPLOAD(_GT06pkt):  # Server response to LOGIN to thwart the device
+    PROTO = 0x44
+
+    def response(self):
+        return super().response(b"")
 
 
 class STOP_ALARM(_GT06pkt):
@@ -308,6 +343,10 @@ class POSITION_UPLOAD_INTERVAL(_GT06pkt):
 
     def response(self):
         return super().response(pack("!H", self.interval))
+
+
+class SOS_ALARM(_GT06pkt):
+    PROTO = 0x99
 
 
 # Build a dict protocol number -> class

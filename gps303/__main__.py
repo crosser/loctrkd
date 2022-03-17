@@ -89,6 +89,7 @@ if __name__.endswith("__main__"):
                             except OSError as e:
                                 log.debug("sending to fd %d error %s", fd, e)
                     else:
+                        # TODO: Also disconnect on HIBERNATION
                         log.info("disconnect fd %d imei %s", fd, imei)
                         pollset.unregister(fd)
                         clntsock.close()
