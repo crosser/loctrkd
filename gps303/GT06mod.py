@@ -307,8 +307,13 @@ class RESTORE_PASSWORD(_GT06pkt):
 class WIFI_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x69
 
-    def response(self):
-        payload = b""  # TODO fill payload
+    def response(self, lat=None, lon=None):
+        if lat is None or lon is None:
+            payload = b""
+        else:
+            payload = "{:+#010.8g},{:+#010.8g}".format(lat, lon).encode(
+                "ascii"
+            )
         return super().response(payload)
 
 
@@ -397,8 +402,8 @@ def handle_packet(packet, addr, when):
             return make_object(length, proto, payload)
 
 
-def make_response(msg):
-    return msg.response()
+def make_response(msg, **kwargs):
+    return msg.response(**kwargs)
 
 
 def set_config(config):  # Note that we are setting _class_ attribute

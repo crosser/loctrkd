@@ -9,6 +9,7 @@ from time import time
 from .config import readconfig
 from .GT06mod import handle_packet, make_response, LOGIN, set_config
 from .evstore import initdb, stow
+from .lookaside import prepare_response
 
 CONF = "/etc/gps303.conf"
 
@@ -81,7 +82,8 @@ if __name__.endswith("__main__"):
                             msg.proto,
                             msg.payload,
                         )
-                        response = make_response(msg)
+                        kwargs = prepare_response(conf, msg)
+                        response = make_response(msg, **kwargs)
                         if response:
                             try:
                                 # Ignore possibility of blocking
