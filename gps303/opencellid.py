@@ -44,8 +44,10 @@ def qry_cell(dbname, mcc, gsm_cells):
             (mcc,),
         )
         data = list(lc.fetchall())
-        sumsig = sum([sig for _, _, sig in data])
-        nsigs = [sig / sumsig for _, _, sig in data]
+        if not data:
+            return None, None
+        sumsig = sum([1 / sig for _, _, sig in data])
+        nsigs = [1 / sig / sumsig for _, _, sig in data]
         avlat = sum([lat * nsig for (lat, _, _), nsig in zip(data, nsigs)])
         avlon = sum([lon * nsig for (_, lon, _), nsig in zip(data, nsigs)])
         # lc.execute("drop table mem.seen")
