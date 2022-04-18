@@ -405,7 +405,6 @@ def make_object(length, proto, payload):
 
 
 def parse_message(packet):
-    print("packet w/o frame", packet.hex())
     length, proto = unpack("BB", packet[:2])
     payload = packet[2:]
     adjust = 2 if proto == STATUS.PROTO else 4  # Weird special case
@@ -426,7 +425,6 @@ def parse_message(packet):
 
 
 def handle_packet(packet):  # DEPRECATED
-    print("packet in frame", packet.hex())
     if len(packet) < 6 or packet[:2] != b"xx" or packet[-2:] != b"\r\n":
         return UNKNOWN.from_packet(len(packet), packet)
     return parse_message(packet[2:-2])
