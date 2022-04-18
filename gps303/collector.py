@@ -1,3 +1,5 @@
+""" TCP server that communicates with terminals """
+
 from getopt import getopt
 from logging import getLogger, StreamHandler, DEBUG, INFO
 from logging.handlers import SysLogHandler
@@ -7,7 +9,7 @@ import sys
 import zmq
 
 from .config import readconfig
-from .GT06mod import handle_packet, make_response, LOGIN, set_config
+from .gps303proto import handle_packet, make_response, LOGIN, set_config
 
 CONF = "/etc/gps303.conf"
 
@@ -15,41 +17,46 @@ log = getLogger("gps303/collector")
 
 
 class Bcast:
+    """Zmq message to broadcast what was received from the terminal"""
     def __init__(self, imei, msg):
         self.as_bytes = imei.encode() + msg.encode()
 
 
-class Zmsg:
+class Resp:
+    """Zmq message received from a third party to send to the terminal"""
     def __init__(self, msg):
         self.imei = msg[:16].decode()
         self.payload = msg[16:]
 
 
 class Client:
-    def __init__(self, clntsock, clntaddr):
-        self.clntsock = clntsock
-        self.clntaddr = clntaddr
+    """Connected socket to the terminal plus buffer and metadata"""
+    def __init__(self, sock, addr):
+        self.sock = sock
+        self.addr = addr
         self.buffer = b""
         self.imei = None
 
     def close(self):
-        self.clntsock.close()
+        self.sock.close()
+        self.buffer = b""
+        self.imei = None
 
     def recv(self):
-        packet = self.clntsock.recv(4096)
-        if not packet:
+        segment = self.sock.recv(4096)
+        if not segment:
             return None
         when = time()
-        self.buffer += packet
+        self.buffer += segment
         # implement framing properly
-        msg = handle_packet(packet, self.clntaddr, when)
+        msg = handle_packet(packet, self.addr, when)
         self.buffer = self.buffer[len(packet):]
         if isinstance(msg, LOGIN):
             self.imei = msg.imei
         return msg
 
     def send(self, buffer):
-        self.clntsock.send(buffer)
+        self.sock.send(buffer)
 
 
 class Clients:
@@ -107,7 +114,7 @@ def runserver(opts, conf):
                     while True:
                         try:
                             msg = zsub.recv(zmq.NOBLOCK)
-                            tosend.append(Zmsg(msg))
+                            tosend.append(Resp(msg))
                         except zmq.Again:
                             break
                 elif sk == tcpfd:

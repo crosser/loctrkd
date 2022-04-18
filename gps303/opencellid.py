@@ -58,7 +58,7 @@ def qry_cell(dbname, mcc, gsm_cells):
 if __name__.endswith("__main__"):
     from datetime import datetime, timezone
     import sys
-    from .GT06mod import *
+    from .gps303proto import *
 
     db = connect(sys.argv[1])
     c = db.cursor()

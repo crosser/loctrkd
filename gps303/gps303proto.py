@@ -1,6 +1,17 @@
 """
-Implementation of the protocol used by zx303 GPS+GPRS module
-Description from https://github.com/tobadia/petGPS/tree/master/resources
+Implementation of the protocol used by zx303 "ZhongXun Topin Locator"
+GPS+GPRS module. Description lifted from this repository:
+https://github.com/tobadia/petGPS/tree/master/resources
+
+Forewarnings:
+1. There is no security whatsoever. If you know the module's IMEI,
+   you can feed fake data to the server, including fake location.
+2. Ad-hoc choice of framing of messages (that are transferred over
+   the TCP stream) makes it vulnerable to coincidental appearance
+   of framing bytes in the middle of the message. Most of the time
+   the server will receive one message in one TCP segment (i.e. in
+   one `recv()` operation, but relying on that would break things
+   if the path has lower MTU than the size of a message.
 """
 
 from datetime import datetime, timezone

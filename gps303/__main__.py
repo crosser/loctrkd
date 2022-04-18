@@ -7,7 +7,7 @@ import sys
 from time import time
 
 from .config import readconfig
-from .GT06mod import handle_packet, make_response, LOGIN, set_config
+from .gps303proto import handle_packet, make_response, LOGIN, set_config
 from .evstore import initdb, stow
 from .lookaside import prepare_response
 

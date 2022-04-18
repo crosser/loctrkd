@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlite3 import connect
 import sys
 
-from .GT06mod import *
+from .gps303proto import *
 from .opencellid import qry_cell
 
 db = connect(sys.argv[1])

@@ -2,7 +2,7 @@
 For when responding to the terminal is not trivial
 """
 
-from .GT06mod import *
+from .gps303proto import *
 from .opencellid import qry_cell
 
 def prepare_response(conf, msg):
