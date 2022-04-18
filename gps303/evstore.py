@@ -1,9 +1,6 @@
-from logging import getLogger
 from sqlite3 import connect
 
 __all__ = ("initdb", "stow")
-
-log = getLogger("gps303")
 
 DB = None
 
@@ -19,7 +16,6 @@ SCHEMA = """create table if not exists events (
 
 def initdb(dbname):
     global DB
-    log.info('Using Sqlite3 database "%s"', dbname)
     DB = connect(dbname)
     DB.execute(SCHEMA)
 

@@ -87,7 +87,8 @@ class GPS303Pkt:
     def to_packet(self):
         return pack("BB", self.length, self.PROTO) + self.payload
 
-    def response(self, *args):
+    @classmethod
+    def response(cls, *args):
         if len(args) == 0:
             return None
         assert len(args) == 1 and isinstance(args[0], bytes)
@@ -95,7 +96,7 @@ class GPS303Pkt:
         length = len(payload) + 1
         if length > 6:
             length -= 6
-        return pack("BB", length, self.PROTO) + payload
+        return pack("BB", length, cls.PROTO) + payload
 
 
 class UNKNOWN(GPS303Pkt):
@@ -112,14 +113,16 @@ class LOGIN(GPS303Pkt):
         self.ver = unpack("B", payload[-1:])[0]
         return self
 
-    def response(self):
+    @classmethod
+    def response(cls):
         return super().response(b"")
 
 
 class SUPERVISION(GPS303Pkt):  # Server sends supervision number status
     PROTO = 0x05
 
-    def response(self, supnum=0):
+    @classmethod
+    def response(cls, supnum=0):
         # 1: The device automatically answers Pickup effect
         # 2: Automatically Answering Two-way Calls
         # 3: Ring manually answer the two-way call
@@ -145,9 +148,9 @@ class _GPS_POSITIONING(GPS303Pkt):
         self.gps_nb_sat = payload[6] & 0x0F
         lat, lon, speed, flags = unpack("!IIBH", payload[7:18])
         self.gps_is_valid = bool(flags & 0b0001000000000000)  # bit 3
-        flip_lon = bool(flags & 0b0000100000000000)  # bit 4
-        flip_lat = not bool(flags & 0b0000010000000000)  # bit 5
-        self.heading = flags & 0b0000001111111111  # bits 6 - last
+        flip_lon =          bool(flags & 0b0000100000000000)  # bit 4
+        flip_lat = not      bool(flags & 0b0000010000000000)  # bit 5
+        self.heading =           flags & 0b0000001111111111   # bits 6 - last
         self.latitude = lat / (30000 * 60) * (-1 if flip_lat else 1)
         self.longitude = lon / (30000 * 60) * (-2 if flip_lon else 1)
         self.speed = speed
@@ -392,7 +395,7 @@ def proto_by_name(name):
 
 
 def proto_of_message(packet):
-    return unpack("B", packet[1:2])
+    return unpack("B", packet[1:2])[0]
 
 
 def make_object(length, proto, payload):

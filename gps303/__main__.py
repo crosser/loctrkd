@@ -27,12 +27,12 @@ if __name__.endswith("__main__"):
     log.setLevel(DEBUG if "-d" in opts else INFO)
     log.info("starting with options: %s", opts)
 
-    initdb(conf.get("daemon", "dbfn"))
+    initdb(conf.get("storage", "dbfn"))
     set_config(conf)
 
     ctlsock = socket(AF_INET, SOCK_STREAM)
     ctlsock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    ctlsock.bind(("", conf.getint("daemon", "port")))
+    ctlsock.bind(("", conf.getint("collector", "port")))
     ctlsock.listen(5)
     ctlfd = ctlsock.fileno()
     pollset = poll()
