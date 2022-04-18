@@ -69,7 +69,7 @@ if __name__.endswith("__main__"):
                     packet = clntsock.recv(4096)
                     when = time()
                     if packet:
-                        msg = handle_packet(packet, clntaddr, when)
+                        msg = handle_packet(packet)
                         log.debug("%s from %s fd %d", msg, clntaddr, fd)
                         if isinstance(msg, LOGIN):
                             imei = msg.imei
@@ -79,7 +79,7 @@ if __name__.endswith("__main__"):
                             when,
                             imei,
                             msg.length,
-                            msg.proto,
+                            msg.PROTO,
                             msg.payload,
                         )
                         kwargs = prepare_response(conf, msg)
