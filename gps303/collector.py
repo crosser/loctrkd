@@ -1,8 +1,6 @@
 """ TCP server that communicates with terminals """
 
-from getopt import getopt
 from logging import getLogger
-from logging.handlers import SysLogHandler
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from time import time
 from struct import pack

@@ -25,7 +25,6 @@ __all__ = (
     "make_response",
     "parse_message",
     "proto_by_name",
-    "set_config",
     "GPS303Pkt",
     "UNKNOWN",
     "LOGIN",
@@ -58,7 +57,6 @@ log = getLogger("gps303")
 
 class GPS303Pkt:
     PROTO: int
-    CONFIG = None
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
@@ -437,6 +435,3 @@ def make_response(msg, **kwargs):  # DEPRECATED
     inframe = msg.response(**kwargs)
     return None if inframe is None else b"xx" + inframe + b"\r\n"
 
-
-def set_config(config):  # Note that we are setting _class_ attribute
-    GPS303Pkt.CONFIG = config

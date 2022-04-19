@@ -1,13 +1,11 @@
-from getopt import getopt
-from logging import getLogger, StreamHandler, DEBUG, INFO
-from logging.handlers import SysLogHandler
+from logging import getLogger
 from select import poll, POLLIN, POLLERR, POLLHUP, POLLPRI
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 import sys
 from time import time
 
-from .config import readconfig
-from .gps303proto import handle_packet, make_response, LOGIN, set_config
+from . import common
+from .gps303proto import handle_packet, make_response, LOGIN
 from .evstore import initdb, stow
 from .lookaside import prepare_response
 
@@ -15,20 +13,8 @@ CONF = "/etc/gps303.conf"
 
 log = getLogger("gps303")
 
-if __name__.endswith("__main__"):
-    opts, _ = getopt(sys.argv[1:], "c:d")
-    opts = dict(opts)
-    conf = readconfig(opts["-c"] if "-c" in opts else CONF)
-
-    if sys.stdout.isatty():
-        log.addHandler(StreamHandler(sys.stderr))
-    else:
-        log.addHandler(SysLogHandler(address="/dev/log"))
-    log.setLevel(DEBUG if "-d" in opts else INFO)
-    log.info("starting with options: %s", opts)
-
+def runserver(conf):
     initdb(conf.get("storage", "dbfn"))
-    set_config(conf)
 
     ctlsock = socket(AF_INET, SOCK_STREAM)
     ctlsock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -98,3 +84,6 @@ if __name__.endswith("__main__"):
                         del clnt_dict[fd]
                 if ev & ~POLLIN:
                     log.warning("unexpected event", ev, "on fd", fd)
+
+if __name__.endswith("__main__"):
+    runserver(common.init(log))
