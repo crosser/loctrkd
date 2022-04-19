@@ -7,7 +7,13 @@ from struct import pack
 import zmq
 
 from . import common
-from .gps303proto import HIBERNATION, LOGIN, parse_message, proto_of_message
+from .gps303proto import (
+    HIBERNATION,
+    LOGIN,
+    inline_response,
+    parse_message,
+    proto_of_message,
+)
 
 log = getLogger("gps303/collector")
 
@@ -178,18 +184,27 @@ def runserver(conf):
                     clntsock, clntaddr = tcpl.accept()
                     topoll.append((clntsock, clntaddr))
                 else:
-                    for imei, msg in clients.recv(sk):
-                        zpub.send(Bcast(imei, msg).as_bytes)
-                        if (
-                            msg is None
-                            or proto_of_message(msg) == HIBERNATION.PROTO
-                        ):
-                            log.debug(
-                                "HIBERNATION from fd %d (IMEI %s)", sk, imei
-                            )
-                            tostop.append(sk)
-                        elif proto_of_message(msg) == LOGIN.PROTO:
-                            clients.response(Resp(imei=imei, payload=LOGIN.response()))
+                    received = clients.recv(sk)
+                    if received is None:
+                        log.debug(
+                            "Terminal gone from fd %d (IMEI %s)", sk, imei
+                        )
+                        tostop.append(sk)
+                    else:
+                        for imei, msg in received:
+                            zpub.send(Bcast(imei, msg).as_bytes)
+                            if proto_of_message(msg) == HIBERNATION.PROTO:
+                                log.debug(
+                                    "HIBERNATION from fd %d (IMEI %s)",
+                                    sk,
+                                    imei,
+                                )
+                                tostop.append(sk)
+                            respmsg = inline_response(msg)
+                            if respmsg is not None:
+                                clients.response(
+                                    Resp(imei=imei, payload=respmsg)
+                                )
             # poll queue consumed, make changes now
             for fd in tostop:
                 poller.unregister(fd)
