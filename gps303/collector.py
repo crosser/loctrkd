@@ -1,7 +1,7 @@
 """ TCP server that communicates with terminals """
 
 from logging import getLogger
-from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from socket import socket, AF_INET6, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from time import time
 from struct import pack
 import zmq
@@ -135,7 +135,7 @@ def runserver(conf):
     zpub.bind(conf.get("collector", "publishurl"))
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "listenurl"))
-    tcpl = socket(AF_INET, SOCK_STREAM)
+    tcpl = socket(AF_INET6, SOCK_STREAM)
     tcpl.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     tcpl.bind(("", conf.getint("collector", "port")))
     tcpl.listen(5)

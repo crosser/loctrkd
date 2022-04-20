@@ -6,8 +6,11 @@ from struct import pack, unpack
 __all__ = "Bcast", "Resp"
 
 def pack_peer(peeraddr):
-    saddr, port = peeraddr
-    addr = ip.ip_address(saddr)
+    saddr, port, _x, _y = peeraddr
+    addr6 = ip.ip_address(saddr)
+    addr = addr6.ipv4_mapped
+    if addr is None:
+        addr = addr6
     return pack("B", addr.version) + (addr.packed + b"\0\0\0\0\0\0\0\0\0\0\0\0")[:16] + pack("!H", port)
 
 def unpack_peer(buffer):
