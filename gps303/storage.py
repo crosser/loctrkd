@@ -1,5 +1,6 @@
 """ Store zmq broadcasts to sqlite """
 
+from datetime import datetime, timezone
 from getopt import getopt
 from logging import getLogger
 from logging.handlers import SysLogHandler
@@ -10,8 +11,10 @@ import zmq
 from . import common
 from .evstore import initdb, stow
 from .gps303proto import parse_message
+from .zmsg import Bcast
 
 log = getLogger("gps303/storage")
+
 
 def runserver(conf):
     dbname = conf.get("storage", "dbfn")
@@ -24,12 +27,17 @@ def runserver(conf):
 
     try:
         while True:
-            zmsg = zsub.recv()
-            imei = zmsg[1:17].decode()
-            packet = zmsg[17:]
-            msg = parse_message(packet)
-            log.debug("From IMEI %s: %s", imei, msg)
-            stow("", time(), imei, msg.length, msg.PROTO, msg.payload)
+            zmsg = Bcast(zsub.recv())
+            msg = parse_message(zmsg.packet)
+            log.debug("IMEI %s from %s at %s: %s", zmsg.imei, zmsg.peeraddr, datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc), msg)
+            stow(
+                zmsg.peeraddr,
+                zmsg.when,
+                zmsg.imei,
+                msg.length,
+                msg.PROTO,
+                msg.payload,
+            )
     except KeyboardInterrupt:
         pass
 
