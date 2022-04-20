@@ -30,8 +30,13 @@ def runserver(conf):
             zmsg = Bcast(zsub.recv())
             msg = parse_message(zmsg.packet)
             log.debug("IMEI %s from %s at %s: %s", zmsg.imei, zmsg.peeraddr, datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc), msg)
+            if zmsg.peeraddr is not None:
+                addr, port = zmsg.peeraddr
+                peeraddr = str(addr), port
+            else:
+                peeraddr = None
             stow(
-                zmsg.peeraddr,
+                peeraddr,
                 zmsg.when,
                 zmsg.imei,
                 msg.length,
