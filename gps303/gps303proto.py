@@ -272,8 +272,32 @@ class PROHIBIT_LBS(GPS303Pkt):
         return self.make_packet(pack("B", status))
 
 
+class LBS_SWITCH_TIMES(GPS303Pkt):
+    PROTO = 0x34
+    INLINE = False
+
+    def response(self):
+        return self.make_packet(b"")
+
+
+class REMOTE_MONITOR_PHONE(GPS303Pkt):
+    PROTO = 0x40
+    INLINE = False
+
+
+class SOS_PHONE(GPS303Pkt):
+    PROTO = 0x41
+    INLINE = False
+
+
+class DAD_PHONE(GPS303Pkt):
+    PROTO = 0x42
+    INLINE = False
+
+
 class MOM_PHONE(GPS303Pkt):
     PROTO = 0x43
+    INLINE = False
 
 
 class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
