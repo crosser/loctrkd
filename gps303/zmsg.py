@@ -5,13 +5,19 @@ from struct import pack, unpack
 
 __all__ = "Bcast", "Resp"
 
+
 def pack_peer(peeraddr):
     saddr, port, _x, _y = peeraddr
     addr6 = ip.ip_address(saddr)
     addr = addr6.ipv4_mapped
     if addr is None:
         addr = addr6
-    return pack("B", addr.version) + (addr.packed + b"\0\0\0\0\0\0\0\0\0\0\0\0")[:16] + pack("!H", port)
+    return (
+        pack("B", addr.version)
+        + (addr.packed + b"\0\0\0\0\0\0\0\0\0\0\0\0")[:16]
+        + pack("!H", port)
+    )
+
 
 def unpack_peer(buffer):
     version = buffer[0]
@@ -41,6 +47,22 @@ class _Zmsg:
                 + str(kwargs)
             )
 
+    def __repr__(self):
+        return "{}({})".format(
+            self.__class__.__name__,
+            ", ".join(
+                [
+                    "{}={}".format(
+                        k,
+                        'bytes.fromhex("{}")'.format(getattr(self, k).hex())
+                        if isinstance(getattr(self, k), bytes)
+                        else getattr(self, k),
+                    )
+                    for k, _ in self.KWARGS
+                ]
+            ),
+        )
+
     def decode(self, buffer):
         raise RuntimeError(
             self.__class__.__name__ + "must implement `encode()` method"
@@ -69,7 +91,11 @@ class Bcast(_Zmsg):
         return (
             pack("B", self.proto)
             + ("0000000000000000" if self.imei is None else self.imei).encode()
-            + (b"\0\0\0\0\0\0\0\0" if self.when is None else pack("!d", self.when))
+            + (
+                b"\0\0\0\0\0\0\0\0"
+                if self.when is None
+                else pack("!d", self.when)
+            )
             + pack_peer(self.peeraddr)
             + self.packet
         )

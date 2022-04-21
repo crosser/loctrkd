@@ -58,6 +58,7 @@ log = getLogger("gps303")
 
 class GPS303Pkt:
     PROTO: int
+    INLINE = True
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
@@ -96,15 +97,15 @@ class GPS303Pkt:
 
     @classmethod
     def inline_response(cls, packet):
-        return cls.make_packet(b"")
+        if cls.INLINE:
+            return cls.make_packet(b"")
+        else:
+            return None
 
 
 class UNKNOWN(GPS303Pkt):
     PROTO = 256  # > 255 is impossible in real packets
-
-    @classmethod
-    def inline_response(cls, packet):
-        return None
+    INLINE = False
 
 
 class LOGIN(GPS303Pkt):
@@ -117,18 +118,16 @@ class LOGIN(GPS303Pkt):
         self.ver = unpack("B", payload[-1:])[0]
         return self
 
-    def response(self):
-        return self.make_packet(b"")
-
 
 class SUPERVISION(GPS303Pkt):  # Server sends supervision number status
     PROTO = 0x05
+    INLINE = False
 
     def response(self, supnum=0):
         # 1: The device automatically answers Pickup effect
         # 2: Automatically Answering Two-way Calls
         # 3: Ring manually answer the two-way call
-        return super().response(b"")
+        return self.make_packet(pack("B", supnum))
 
 
 class HEARTBEAT(GPS303Pkt):
@@ -163,9 +162,6 @@ class _GPS_POSITIONING(GPS303Pkt):
     def inline_response(cls, packet):
         return cls.make_packet(packet[2:8])
 
-    def response(self):
-        return self.make_packet(self.dtime)
-
 
 class GPS_POSITIONING(_GPS_POSITIONING):
     PROTO = 0x10
@@ -177,6 +173,7 @@ class GPS_OFFLINE_POSITIONING(_GPS_POSITIONING):
 
 class STATUS(GPS303Pkt):
     PROTO = 0x13
+    INLINE = False
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -196,12 +193,8 @@ class STATUS(GPS303Pkt):
             self.signal = None
         return self
 
-    @classmethod
-    def inline_response(cls, packet):
-        return None
-
     def response(self, upload_interval=25):  # Set interval in minutes
-        return super().response(pack("B", upload_interval))
+        return self.make_packet(pack("B", upload_interval))
 
 
 class HIBERNATION(GPS303Pkt):
@@ -210,6 +203,7 @@ class HIBERNATION(GPS303Pkt):
 
 class RESET(GPS303Pkt):  # Device sends when it got reset SMS
     PROTO = 0x15
+    INLINE = False
 
     def response(self):  # Server can send to initiate factory reset
         return self.make_packet(b"")
@@ -217,9 +211,10 @@ class RESET(GPS303Pkt):  # Device sends when it got reset SMS
 
 class WHITELIST_TOTAL(GPS303Pkt):  # Server sends to initiage sync (0x58)
     PROTO = 0x16
+    INLINE = False
 
     def response(self, number=3):  # Number of whitelist entries
-        return super().response(pack("B", number))
+        return self.make_packet(pack("B", number))
 
 
 class _WIFI_POSITIONING(GPS303Pkt):
@@ -258,9 +253,6 @@ class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
     def inline_response(cls, packet):
         return cls.make_packet(packet[2:8])
 
-    def response(self):
-        return super().response(self.dtime)
-
 
 class TIME(GPS303Pkt):
     PROTO = 0x30
@@ -271,16 +263,13 @@ class TIME(GPS303Pkt):
             "!BBHBBBBB", 7, cls.PROTO, *datetime.utcnow().timetuple()[:6]
         )
 
-    def response(self):
-        payload = pack("!HBBBBB", *datetime.utcnow().timetuple()[:6])
-        return super().response(payload)
-
 
 class PROHIBIT_LBS(GPS303Pkt):
     PROTO = 0x33
+    INLINE = False
 
     def response(self, status=1):  # Server sent, 0-off, 1-on
-        return super().response(pack("B", status))
+        return self.make_packet(pack("B", status))
 
 
 class MOM_PHONE(GPS303Pkt):
@@ -290,9 +279,6 @@ class MOM_PHONE(GPS303Pkt):
 class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
     PROTO = 0x44
 
-    def response(self):
-        return super().response(b"")
-
 
 class STOP_ALARM(GPS303Pkt):
     PROTO = 0x56
@@ -300,6 +286,7 @@ class STOP_ALARM(GPS303Pkt):
 
 class SETUP(GPS303Pkt):
     PROTO = 0x57
+    INLINE = False
 
     def response(
         self,
@@ -333,7 +320,7 @@ class SETUP(GPS303Pkt):
             ]
             + [b";".join([el.encode() for el in phoneNumbers])]
         )
-        return super().response(payload)
+        return self.make_packet(payload)
 
 
 class SYNCHRONOUS_WHITELIST(GPS303Pkt):
@@ -346,10 +333,7 @@ class RESTORE_PASSWORD(GPS303Pkt):
 
 class WIFI_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x69
-
-    @classmethod
-    def inline_response(cls, packet):
-        return None
+    INLINE = False
 
     def response(self, lat=None, lon=None):
         if lat is None or lon is None:
@@ -383,6 +367,7 @@ class VIBRATION_RECEIVED(GPS303Pkt):
 
 class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
     PROTO = 0x98
+    INLINE = False
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -390,12 +375,8 @@ class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
         self.interval = unpack("!H", payload[:2])
         return self
 
-    @classmethod
-    def inline_response(cls, packet):
-        return cls.make_packet(packet[2:4])
-
-    def response(self):
-        return self.make_packet(pack("!H", self.interval))
+    def response(self, interval=10):
+        return self.make_packet(pack("!H", interval))
 
 
 class SOS_ALARM(GPS303Pkt):
