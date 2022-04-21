@@ -1,16 +1,17 @@
+""" sqlite event store """
+
 from sqlite3 import connect
 
-__all__ = ("initdb", "stow")
+__all__ = "initdb", "stow"
 
 DB = None
 
 SCHEMA = """create table if not exists events (
-    timestamp real not null,
+    tstamp real not null,
     imei text,
-    clntaddr text not null,
-    length int,
+    peeraddr text not null,
     proto int not null,
-    payload blob
+    packet blob
 )"""
 
 
@@ -20,19 +21,24 @@ def initdb(dbname):
     DB.execute(SCHEMA)
 
 
-def stow(clntaddr, timestamp, imei, length, proto, payload):
+def stow(**kwargs):
     assert DB is not None
-    parms = dict(
-        zip(
-            ("clntaddr", "timestamp", "imei", "length", "proto", "payload"),
-            (str(clntaddr), timestamp, imei, length, proto, payload),
+    parms = {
+        k: kwargs[k] if k in kwargs else v
+        for k, v in (
+            ("peeraddr", None),
+            ("when", 0.0),
+            ("imei", None),
+            ("proto", -1),
+            ("packet", b""),
         )
-    )
+    }
+    assert len(kwargs) <= len(parms)
     DB.execute(
         """insert or ignore into events
-                (timestamp, imei, clntaddr, length, proto, payload)
+                (tstamp, imei, peeraddr, proto, packet)
                 values
-                (:timestamp, :imei, :clntaddr, :length, :proto, :payload)
+                (:when, :imei, :peeraddr, :proto, :packet)
         """,
         parms,
     )

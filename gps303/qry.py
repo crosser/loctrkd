@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlite3 import connect
 import sys
 
-from .gps303proto import *
+from .gps303proto import parse_message, proto_by_name
 
 db = connect(sys.argv[1])
 c = db.cursor()
@@ -16,15 +16,17 @@ else:
     selector = ""
 
 c.execute(
-    "select timestamp, imei, clntaddr, length, proto, payload from events" +
+    "select tstamp, imei, peeraddr, proto, packet from events" +
     selector, {"proto": proto}
 )
 
-for timestamp, imei, clntaddr, length, proto, payload in c:
-    msg = make_object(length, proto, payload)
+for tstamp, imei, peeraddr, proto, packet in c:
+    msg = parse_message(packet)
     print(
-        datetime.fromtimestamp(timestamp)
+        datetime.fromtimestamp(tstamp)
         .astimezone(tz=timezone.utc)
         .isoformat(),
+        imei,
+        peeraddr,
         msg,
     )

@@ -1,16 +1,12 @@
 """ Store zmq broadcasts to sqlite """
 
 from datetime import datetime, timezone
-from getopt import getopt
 from logging import getLogger
-from logging.handlers import SysLogHandler
-import sys
-from time import time
 import zmq
 
 from . import common
 from .evstore import initdb, stow
-from .gps303proto import parse_message
+from .gps303proto import proto_of_message
 from .zmsg import Bcast
 
 log = getLogger("gps303/storage")
@@ -28,20 +24,24 @@ def runserver(conf):
     try:
         while True:
             zmsg = Bcast(zsub.recv())
-            msg = parse_message(zmsg.packet)
-            log.debug("IMEI %s from %s at %s: %s", zmsg.imei, zmsg.peeraddr, datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc), msg)
+            log.debug(
+                "IMEI %s from %s at %s: %s",
+                zmsg.imei,
+                zmsg.peeraddr,
+                datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
+                zmsg.packet.hex(),
+            )
             if zmsg.peeraddr is not None:
                 addr, port = zmsg.peeraddr
-                peeraddr = str(addr), port
+                peeraddr = str((str(addr), port))
             else:
                 peeraddr = None
             stow(
-                peeraddr,
-                zmsg.when,
-                zmsg.imei,
-                msg.length,
-                msg.PROTO,
-                msg.payload,
+                peeraddr=peeraddr,
+                when=zmsg.when,
+                imei=zmsg.imei,
+                proto=proto_of_message(zmsg.packet),
+                packet=zmsg.packet,
             )
     except KeyboardInterrupt:
         pass
