@@ -314,35 +314,35 @@ class SETUP(GPS303Pkt):
 
     def response(
         self,
-        uploadIntervalSeconds=0x0300,
-        binarySwitch=0b00110001,
+        uploadintervalseconds=0x0300,
+        binaryswitch=0b00110001,
         alarms=[0, 0, 0],
-        dndTimeSwitch=0,
-        dndTimes=[0, 0, 0],
-        gpsTimeSwitch=0,
-        gpsTimeStart=0,
-        gpsTimeStop=0,
-        phoneNumbers=["", "", ""],
+        dndtimeswitch=0,
+        dndtimes=[0, 0, 0],
+        gpstimeswitch=0,
+        gpstimestart=0,
+        gpstimestop=0,
+        phonenumbers=["", "", ""],
     ):
         def pack3b(x):
             return pack("!I", x)[1:]
 
         payload = b"".join(
             [
-                pack("!H", uploadIntervalSeconds),
-                pack("B", binarySwitch),
+                pack("!H", uploadintervalseconds),
+                pack("B", binaryswitch),
             ]
             + [pack3b(el) for el in alarms]
             + [
-                pack("B", dndTimeSwitch),
+                pack("B", dndtimeswitch),
             ]
-            + [pack3b(el) for el in dndTimes]
+            + [pack3b(el) for el in dndtimes]
             + [
-                pack("B", gpsTimeSwitch),
-                pack("!H", gpsTimeStart),
-                pack("!H", gpsTimeStop),
+                pack("B", gpstimeswitch),
+                pack("!H", gpstimestart),
+                pack("!H", gpstimestop),
             ]
-            + [b";".join([el.encode() for el in phoneNumbers])]
+            + [b";".join([el.encode() for el in phonenumbers])]
         )
         return self.make_packet(payload)
 

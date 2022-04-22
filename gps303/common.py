@@ -9,6 +9,7 @@ CONF = "/etc/gps303.conf"
 PORT = 4303
 DBFN = "/var/lib/gps303/gps303.sqlite"
 
+
 def init(log):
     opts, _ = getopt(argv[1:], "c:d")
     opts = dict(opts)
@@ -21,6 +22,7 @@ def init(log):
     log.info("starting with options: %s", opts)
     return conf
 
+
 def readconfig(fname):
     config = ConfigParser()
     config["collector"] = {
@@ -29,12 +31,30 @@ def readconfig(fname):
     config["storage"] = {
         "dbfn": DBFN,
     }
-    config["device"] = {}
-    #_print_config(config)
-    #print("now reading", fname)
+    config["termconfig"] = {}
     config.read(fname)
-    #_print_config(config)
     return config
+
+
+def normconf(section):
+    result = {}
+    for key, val in section.items():
+        vals = val.split("\n")
+        if len(vals) > 1 and vals[0] == "":
+            vals = vals[1:]
+        lst = []
+        for el in vals:
+            try:
+                el = int(el, 0)
+            except ValueError:
+                if el[0] == '"' and el[-1] == '"':
+                    el = el.strip('"').rstrip('"')
+            lst.append(el)
+        if len(lst) == 1:
+            [lst] = lst
+        result[key] = lst
+    return result
+
 
 if __name__ == "__main__":
     from sys import argv
@@ -47,4 +67,4 @@ if __name__ == "__main__":
 
     conf = readconfig(argv[1])
     _print_config(conf)
-    print("binaryswitch", int(conf.get("device", "binaryswitch"), 0))
+    print(normconf(conf["termconfig"]))

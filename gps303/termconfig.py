@@ -6,13 +6,14 @@ from struct import pack
 import zmq
 
 from . import common
-from .gps303proto import parse_message, proto_by_name
+from .gps303proto import *
 from .zmsg import Bcast, Resp
 
 log = getLogger("gps303/termconfig")
 
 
 def runserver(conf):
+    termconfig = common.normconf(conf["termconfig"])
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
@@ -41,8 +42,28 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            # TODO get data from the config
-            resp = Resp(imei=zmsg.imei, packet=msg.response())
+            kwargs = {}
+            if isinstance(msg, STATUS):
+                kwargs = {
+                    "upload_interval": termconf.get(
+                        "statusintervalminutes", 25
+                    )
+                }
+            elif isinstance(msg, SETUP):
+                for key in (
+                    "uploadintervalseconds",
+                    "binaryswitch",
+                    "alarms",
+                    "dndtimeswitch",
+                    "dndtimes",
+                    "gpstimeswitch",
+                    "gpstimestart",
+                    "gpstimestop",
+                    "phonenumbers",
+                ):
+                    if key in termconfig:
+                        kwargs[key] = termconfig[key]
+            resp = Resp(imei=zmsg.imei, packet=msg.response(**kwargs))
             log.debug("Response: %s", resp)
             zpush.send(resp.packed)
 
