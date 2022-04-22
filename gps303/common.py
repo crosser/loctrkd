@@ -10,8 +10,9 @@ PORT = 4303
 DBFN = "/var/lib/gps303/gps303.sqlite"
 
 
-def init(log):
-    opts, _ = getopt(argv[1:], "c:d")
+def init(log, opts=None):
+    if opts is None:
+        opts, _ = getopt(argv[1:], "c:d")
     opts = dict(opts)
     conf = readconfig(opts["-c"] if "-c" in opts else CONF)
     if stdout.isatty():

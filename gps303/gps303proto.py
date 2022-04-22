@@ -21,6 +21,7 @@ from logging import getLogger
 from struct import pack, unpack
 
 __all__ = (
+    "class_by_prefix",
     "handle_packet",
     "inline_response",
     "make_object",
@@ -534,6 +535,15 @@ if True:  # just to indent the code, sorry!
         if hasattr(cls, "PROTO"):
             CLASSES[cls.PROTO] = cls
             PROTOS[cls.__name__] = cls.PROTO
+
+
+def class_by_prefix(prefix):
+    lst = [(name, proto) for name, proto in PROTOS.items()
+            if name.upper().startswith(prefix.upper())]
+    if len(lst) != 1:
+        return lst
+    _, proto = lst[0]
+    return CLASSES[proto]
 
 
 def proto_by_name(name):
