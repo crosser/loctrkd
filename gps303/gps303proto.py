@@ -133,11 +133,12 @@ class SUPERVISION(GPS303Pkt):
     PROTO = 0x05
     DIR = Dir.OUT
 
-    def response(self, status=0):
+    @classmethod
+    def response(cls, status=0):
         # 1: The device automatically answers Pickup effect
         # 2: Automatically Answering Two-way Calls
         # 3: Ring manually answer the two-way call
-        return self.make_packet(pack("B", status))
+        return cls.make_packet(pack("B", status))
 
 
 class HEARTBEAT(GPS303Pkt):
@@ -205,32 +206,36 @@ class STATUS(GPS303Pkt):
             self.signal = None
         return self
 
-    def response(self, upload_interval=25):  # Set interval in minutes
-        return self.make_packet(pack("B", upload_interval))
+    @classmethod
+    def response(cls, upload_interval=25):  # Set interval in minutes
+        return cls.make_packet(pack("B", upload_interval))
 
 
 class HIBERNATION(GPS303Pkt):
     PROTO = 0x14
     DIR = Dir.EXT
 
-    def response(self):  # Server can send to send devicee to sleep
-        return self.make_packet(b"")
+    @classmethod
+    def response(cls):  # Server can send to send devicee to sleep
+        return cls.make_packet(b"")
 
 
 class RESET(GPS303Pkt):  # Device sends when it got reset SMS
     PROTO = 0x15
     DIR = Dir.EXT
 
-    def response(self):  # Server can send to initiate factory reset
-        return self.make_packet(b"")
+    @classmethod
+    def response(cls):  # Server can send to initiate factory reset
+        return cls.make_packet(b"")
 
 
 class WHITELIST_TOTAL(GPS303Pkt):  # Server sends to initiage sync (0x58)
     PROTO = 0x16
     DIR = Dir.OUT
 
-    def response(self, number=3):  # Number of whitelist entries
-        return self.make_packet(pack("B", number))
+    @classmethod
+    def response(cls, number=3):  # Number of whitelist entries
+        return cls.make_packet(pack("B", number))
 
 
 class _WIFI_POSITIONING(GPS303Pkt):
@@ -286,15 +291,17 @@ class PROHIBIT_LBS(GPS303Pkt):
     PROTO = 0x33
     DIR = Dir.OUT
 
-    def response(self, status=1):  # Server sent, 0-off, 1-on
-        return self.make_packet(pack("B", status))
+    @classmethod
+    def response(cls, status=1):  # Server sent, 0-off, 1-on
+        return cls.make_packet(pack("B", status))
 
 
 class GPS_LBS_SWITCH_TIMES(GPS303Pkt):
     PROTO = 0x34
     DIR = Dir.OUT
 
-    def response(self):
+    @classmethod
+    def response(cls):
         # Data is in packed decimal
         # 00/01 - GPS on/off
         # 00/01 - Don't set / Set upload period
@@ -304,14 +311,15 @@ class GPS_LBS_SWITCH_TIMES(GPS303Pkt):
         # HHMM  - Time of boot
         # 00/01 - Don't set / Set time of shutdown
         # HHMM  - Time of shutdown
-        return self.make_packet(b"")  # TODO
+        return cls.make_packet(b"")  # TODO
 
 
 class _SET_PHONE(GPS303Pkt):
     DIR = Dir.OUT
 
-    def response(self, phone):
-        return self.make_packet(phone.encode())
+    @classmethod
+    def response(cls, phone):
+        return cls.make_packet(phone.encode())
 
 
 class REMOTE_MONITOR_PHONE(_SET_PHONE):
@@ -334,16 +342,18 @@ class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
     PROTO = 0x44
     DIR = Dir.OUT
 
-    def response(self):
-        return self.make_packet(b"")
+    @classmethod
+    def response(cls):
+        return cls.make_packet(b"")
 
 
 class GPS_OFF_PERIOD(GPS303Pkt):
     PROTO = 0x46
     DIR = Dir.OUT
 
-    def response(self, onoff=0, fm="0000", to="2359"):
-        return self.make_packet(
+    @classmethod
+    def response(cls, onoff=0, fm="0000", to="2359"):
+        return cls.make_packet(
             pack("B", onoff) + bytes.fromhex(fm) + bytes.fromhex(to)
         )
 
@@ -352,10 +362,11 @@ class DND_PERIOD(GPS303Pkt):
     PROTO = 0x47
     DIR = Dir.OUT
 
+    @classmethod
     def response(
-        self, onoff=0, week=3, fm1="0000", to1="2359", fm2="0000", to2="2359"
+        cls, onoff=0, week=3, fm1="0000", to1="2359", fm2="0000", to2="2359"
     ):
-        return self.make_packet(
+        return cls.make_packet(
             pack("B", onoff)
             + pack("B", week)
             + bytes.fromhex(fm1)
@@ -369,29 +380,32 @@ class RESTART_SHUTDOWN(GPS303Pkt):
     PROTO = 0x48
     DIR = Dir.OUT
 
-    def response(self, flag=0):
+    @classmethod
+    def response(cls, flag=2):
         # 1 - restart
         # 2 - shutdown
-        return self.make_packet(pack("B", flag))
+        return cls.make_packet(pack("B", flag))
 
 
 class DEVICE(GPS303Pkt):
     PROTO = 0x49
     DIR = Dir.OUT
 
-    def response(self, flag=0):
+    @classmethod
+    def response(cls, flag=0):
         # 0 - Stop looking for equipment
         # 1 - Start looking for equipment
-        return self.make_packet(pack("B", flag))
+        return cls.make_packet(pack("B", flag))
 
 
 class ALARM_CLOCK(GPS303Pkt):
     PROTO = 0x50
     DIR = Dir.OUT
 
-    def response(self, alarms=((0, "0000"), (0, "0000"), (0, "0000"))):
+    @classmethod
+    def response(cls, alarms=((0, "0000"), (0, "0000"), (0, "0000"))):
         return b"".join(
-            pack("B", day) + bytes.fromhex(tm) for day, tm in alarms
+            cls("B", day) + bytes.fromhex(tm) for day, tm in alarms
         )
 
 
@@ -408,8 +422,9 @@ class SETUP(GPS303Pkt):
     PROTO = 0x57
     DIR = Dir.EXT
 
+    @classmethod
     def response(
-        self,
+        cls,
         uploadintervalseconds=0x0300,
         binaryswitch=0b00110001,
         alarms=[0, 0, 0],
@@ -440,7 +455,7 @@ class SETUP(GPS303Pkt):
             ]
             + [b";".join([el.encode() for el in phonenumbers])]
         )
-        return self.make_packet(payload)
+        return cls.make_packet(payload)
 
 
 class SYNCHRONOUS_WHITELIST(GPS303Pkt):
@@ -455,14 +470,15 @@ class WIFI_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x69
     DIR = Dir.EXT
 
-    def response(self, lat=None, lon=None):
+    @classmethod
+    def response(cls, lat=None, lon=None):
         if lat is None or lon is None:
             payload = b""
         else:
             payload = "{:+#010.8g},{:+#010.8g}".format(lat, lon).encode(
                 "ascii"
             )
-        return self.make_packet(payload)
+        return cls.make_packet(payload)
 
 
 class MANUAL_POSITIONING(GPS303Pkt):
@@ -483,8 +499,9 @@ class MANUAL_POSITIONING(GPS303Pkt):
             7: "GPS spacing < 50 m",
         }.get(self.flag, "Unknown")
 
-    def response(self):
-        return self.make_packet(b"")
+    @classmethod
+    def response(cls):
+        return cls.make_packet(b"")
 
 
 class BATTERY_CHARGE(GPS303Pkt):
@@ -513,8 +530,9 @@ class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
         self.interval = unpack("!H", payload[:2])
         return self
 
-    def response(self, interval=10):
-        return self.make_packet(pack("!H", interval))
+    @classmethod
+    def response(cls, interval=10):
+        return cls.make_packet(pack("!H", interval))
 
 
 class SOS_ALARM(GPS303Pkt):
