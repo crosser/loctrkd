@@ -15,6 +15,7 @@ Forewarnings:
 """
 
 from datetime import datetime, timezone
+from enum import Enum
 from inspect import isclass
 from logging import getLogger
 from struct import pack, unpack
@@ -56,9 +57,16 @@ __all__ = (
 log = getLogger("gps303")
 
 
+class Dir(Enum):
+    IN = 0  # Incoming, no response needed
+    INLINE = 2  # Birirectional, use `inline_response()`
+    EXT = 3  # Birirectional, use external responder
+    OUT = 4  # Outgoing, should not appear on input
+
+
 class GPS303Pkt:
     PROTO: int
-    INLINE = True
+    DIR = Dir.INLINE  # Most packets anticipate simple acknowledgement
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
@@ -90,14 +98,14 @@ class GPS303Pkt:
     @classmethod
     def make_packet(cls, payload):
         assert isinstance(payload, bytes)
-        length = len(payload) + 1
-        if length > 6:
-            length -= 6
+        length = len(payload) + 1  # plus proto byte
+        # if length > 6:
+        #     length -= 6
         return pack("BB", length, cls.PROTO) + payload
 
     @classmethod
     def inline_response(cls, packet):
-        if cls.INLINE:
+        if cls.DIR is Dir.INLINE:
             return cls.make_packet(b"")
         else:
             return None
@@ -105,11 +113,12 @@ class GPS303Pkt:
 
 class UNKNOWN(GPS303Pkt):
     PROTO = 256  # > 255 is impossible in real packets
-    INLINE = False
+    DIR = Dir.IN
 
 
 class LOGIN(GPS303Pkt):
     PROTO = 0x01
+    # Default response for ACK, can also respond with STOP_UPLOAD
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -119,15 +128,15 @@ class LOGIN(GPS303Pkt):
         return self
 
 
-class SUPERVISION(GPS303Pkt):  # Server sends supervision number status
+class SUPERVISION(GPS303Pkt):
     PROTO = 0x05
-    INLINE = False
+    DIR = Dir.OUT
 
-    def response(self, supnum=0):
+    def response(self, status=0):
         # 1: The device automatically answers Pickup effect
         # 2: Automatically Answering Two-way Calls
         # 3: Ring manually answer the two-way call
-        return self.make_packet(pack("B", supnum))
+        return self.make_packet(pack("B", status))
 
 
 class HEARTBEAT(GPS303Pkt):
@@ -160,7 +169,9 @@ class _GPS_POSITIONING(GPS303Pkt):
 
     @classmethod
     def inline_response(cls, packet):
-        return cls.make_packet(packet[2:8])
+        tup = datetime.utcnow().timetuple()
+        ttup = (tup[0] % 100,) + tup[1:6]
+        return cls.make_packet(pack("BBBBBB", *ttup))
 
 
 class GPS_POSITIONING(_GPS_POSITIONING):
@@ -173,7 +184,7 @@ class GPS_OFFLINE_POSITIONING(_GPS_POSITIONING):
 
 class STATUS(GPS303Pkt):
     PROTO = 0x13
-    INLINE = False
+    DIR = Dir.EXT
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -199,11 +210,15 @@ class STATUS(GPS303Pkt):
 
 class HIBERNATION(GPS303Pkt):
     PROTO = 0x14
+    DIR = Dir.EXT
+
+    def response(self):  # Server can send to send devicee to sleep
+        return self.make_packet(b"")
 
 
 class RESET(GPS303Pkt):  # Device sends when it got reset SMS
     PROTO = 0x15
-    INLINE = False
+    DIR = Dir.EXT
 
     def response(self):  # Server can send to initiate factory reset
         return self.make_packet(b"")
@@ -211,7 +226,7 @@ class RESET(GPS303Pkt):  # Device sends when it got reset SMS
 
 class WHITELIST_TOTAL(GPS303Pkt):  # Server sends to initiage sync (0x58)
     PROTO = 0x16
-    INLINE = False
+    DIR = Dir.OUT
 
     def response(self, number=3):  # Number of whitelist entries
         return self.make_packet(pack("B", number))
@@ -251,7 +266,9 @@ class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
 
     @classmethod
     def inline_response(cls, packet):
-        return cls.make_packet(packet[2:8])
+        return cls.make_packet(
+            bytes.fromhex(datetime.utcnow().strftime("%y%m%d%H%M%S"))
+        )
 
 
 class TIME(GPS303Pkt):
@@ -259,58 +276,136 @@ class TIME(GPS303Pkt):
 
     @classmethod
     def inline_response(cls, packet):
-        return pack(
-            "!BBHBBBBB", 7, cls.PROTO, *datetime.utcnow().timetuple()[:6]
+        return cls.make_packet(
+            pack("!HBBBBB", *datetime.utcnow().timetuple()[:6])
         )
 
 
 class PROHIBIT_LBS(GPS303Pkt):
     PROTO = 0x33
-    INLINE = False
+    DIR = Dir.OUT
 
     def response(self, status=1):  # Server sent, 0-off, 1-on
         return self.make_packet(pack("B", status))
 
 
-class LBS_SWITCH_TIMES(GPS303Pkt):
+class GPS_LBS_SWITCH_TIMES(GPS303Pkt):
     PROTO = 0x34
-    INLINE = False
+    DIR = Dir.OUT
+
+    def response(self):
+        # Data is in packed decimal
+        # 00/01 - GPS on/off
+        # 00/01 - Don't set / Set upload period
+        # HHMMHHMM - Upload period
+        # 00/01 - LBS on/off
+        # 00/01 - Don't set / Set time of boot
+        # HHMM  - Time of boot
+        # 00/01 - Don't set / Set time of shutdown
+        # HHMM  - Time of shutdown
+        return self.make_packet(b"")  # TODO
+
+
+class _SET_PHONE(GPS303Pkt):
+    DIR = Dir.OUT
+
+    def response(self, phone):
+        return self.make_packet(phone.encode())
+
+
+class REMOTE_MONITOR_PHONE(_SET_PHONE):
+    PROTO = 0x40
+
+
+class SOS_PHONE(_SET_PHONE):
+    PROTO = 0x41
+
+
+class DAD_PHONE(_SET_PHONE):
+    PROTO = 0x42
+
+
+class MOM_PHONE(_SET_PHONE):
+    PROTO = 0x43
+
+
+class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
+    PROTO = 0x44
+    DIR = Dir.OUT
 
     def response(self):
         return self.make_packet(b"")
 
 
-class REMOTE_MONITOR_PHONE(GPS303Pkt):
-    PROTO = 0x40
-    INLINE = False
+class GPS_OFF_PERIOD(GPS303Pkt):
+    PROTO = 0x46
+    DIR = Dir.OUT
+
+    def response(self, onoff=0, fm="0000", to="2359"):
+        return self.make_packet(
+            pack("B", onoff) + bytes.fromhex(fm) + bytes.fromhex(to)
+        )
 
 
-class SOS_PHONE(GPS303Pkt):
-    PROTO = 0x41
-    INLINE = False
+class DND_PERIOD(GPS303Pkt):
+    PROTO = 0x47
+    DIR = Dir.OUT
+
+    def response(
+        self, onoff=0, week=3, fm1="0000", to1="2359", fm2="0000", to2="2359"
+    ):
+        return self.make_packet(
+            pack("B", onoff)
+            + pack("B", week)
+            + bytes.fromhex(fm1)
+            + bytes.fromhex(to1)
+            + bytes.fromhex(fm2)
+            + bytes.fromhex(to2)
+        )
 
 
-class DAD_PHONE(GPS303Pkt):
-    PROTO = 0x42
-    INLINE = False
+class RESTART_SHUTDOWN(GPS303Pkt):
+    PROTO = 0x48
+    DIR = Dir.OUT
+
+    def response(self, flag=0):
+        # 1 - restart
+        # 2 - shutdown
+        return self.make_packet(pack("B", flag))
 
 
-class MOM_PHONE(GPS303Pkt):
-    PROTO = 0x43
-    INLINE = False
+class DEVICE(GPS303Pkt):
+    PROTO = 0x49
+    DIR = Dir.OUT
+
+    def response(self, flag=0):
+        # 0 - Stop looking for equipment
+        # 1 - Start looking for equipment
+        return self.make_packet(pack("B", flag))
 
 
-class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
-    PROTO = 0x44
+class ALARM_CLOCK(GPS303Pkt):
+    PROTO = 0x50
+    DIR = Dir.OUT
+
+    def response(self, alarms=((0, "0000"), (0, "0000"), (0, "0000"))):
+        return b"".join(
+            pack("B", day) + bytes.fromhex(tm) for day, tm in alarms
+        )
 
 
 class STOP_ALARM(GPS303Pkt):
     PROTO = 0x56
 
+    @classmethod
+    def from_packet(cls, length, payload):
+        self = super().from_packet(length, payload)
+        self.flag = payload[0]
+
 
 class SETUP(GPS303Pkt):
     PROTO = 0x57
-    INLINE = False
+    DIR = Dir.EXT
 
     def response(
         self,
@@ -357,7 +452,7 @@ class RESTORE_PASSWORD(GPS303Pkt):
 
 class WIFI_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x69
-    INLINE = False
+    DIR = Dir.EXT
 
     def response(self, lat=None, lon=None):
         if lat is None or lon is None:
@@ -371,7 +466,24 @@ class WIFI_POSITIONING(_WIFI_POSITIONING):
 
 class MANUAL_POSITIONING(GPS303Pkt):
     PROTO = 0x80
-    INLINE = False
+    DIR = Dir.EXT
+
+    @classmethod
+    def from_packet(cls, length, payload):
+        self = super().from_packet(length, payload)
+        self.flag = payload[0]
+        self.reason = {
+            1: "Incorrect time",
+            2: "LBS less",
+            3: "WiFi less",
+            4: "LBS search > 3 times",
+            5: "Same LBS and WiFi data",
+            6: "LBS prohibited, WiFi absent",
+            7: "GPS spacing < 50 m",
+        }.get(self.flag, "Unknown")
+
+    def response(self):
+        return self.make_packet(b"")
 
 
 class BATTERY_CHARGE(GPS303Pkt):
@@ -392,7 +504,7 @@ class VIBRATION_RECEIVED(GPS303Pkt):
 
 class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
     PROTO = 0x98
-    INLINE = False
+    DIR = Dir.EXT
 
     @classmethod
     def from_packet(cls, length, payload):
