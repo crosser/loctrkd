@@ -45,7 +45,7 @@ def runserver(conf):
             kwargs = {}
             if isinstance(msg, STATUS):
                 kwargs = {
-                    "upload_interval": termconf.get(
+                    "upload_interval": termconfig.get(
                         "statusintervalminutes", 25
                     )
                 }
