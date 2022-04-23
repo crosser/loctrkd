@@ -18,11 +18,7 @@ def runserver(conf):
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
     for protoname in (
-        "SUPERVISION",
         "STATUS",
-        "RESET",
-        "WHITELIST_TOTAL",
-        "PROHIBIT_LBS",
         "SETUP",
         "POSITION_UPLOAD_INTERVAL",
     ):
@@ -42,6 +38,10 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
+            if msg.DIR is not Dir.EXT:
+                log.error(
+                    "%s does not expect externally provided response", msg
+                )
             kwargs = {}
             if isinstance(msg, STATUS):
                 kwargs = {

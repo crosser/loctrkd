@@ -100,6 +100,7 @@ class Clients:
 
     def add(self, clntsock, clntaddr):
         fd = clntsock.fileno()
+        log.info("Start serving fd %d from %s", fd, clntaddr)
         self.by_fd[fd] = Client(clntsock, clntaddr)
         return fd
 
@@ -121,6 +122,12 @@ class Clients:
             if proto_of_message(packet) == LOGIN.PROTO:  # Could do blindly...
                 self.by_imei[clnt.imei] = clnt
             result.append((clnt.imei, when, peeraddr, packet))
+            log.debug(
+                "Received from %s (IMEI %s): %s",
+                peeraddr,
+                clnt.imei,
+                packet.hex(),
+            )
         return result
 
     def response(self, resp):

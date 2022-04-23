@@ -28,6 +28,7 @@ __all__ = (
     "make_response",
     "parse_message",
     "proto_by_name",
+    "Dir",
     "GPS303Pkt",
     "UNKNOWN",
     "LOGIN",
@@ -67,7 +68,7 @@ class Dir(Enum):
 
 class GPS303Pkt:
     PROTO: int
-    DIR = Dir.INLINE  # Most packets anticipate simple acknowledgement
+    DIR = Dir.IN  # Do not send anything back by default
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
@@ -114,11 +115,11 @@ class GPS303Pkt:
 
 class UNKNOWN(GPS303Pkt):
     PROTO = 256  # > 255 is impossible in real packets
-    DIR = Dir.IN
 
 
 class LOGIN(GPS303Pkt):
     PROTO = 0x01
+    DIR = Dir.INLINE
     # Default response for ACK, can also respond with STOP_UPLOAD
 
     @classmethod
@@ -143,9 +144,12 @@ class SUPERVISION(GPS303Pkt):
 
 class HEARTBEAT(GPS303Pkt):
     PROTO = 0x08
+    DIR = Dir.INLINE
 
 
 class _GPS_POSITIONING(GPS303Pkt):
+    DIR = Dir.INLINE
+
     @classmethod
     def from_packet(cls, length, payload):
         self = super().from_packet(length, payload)
@@ -213,7 +217,7 @@ class STATUS(GPS303Pkt):
 
 class HIBERNATION(GPS303Pkt):
     PROTO = 0x14
-    DIR = Dir.EXT
+    DIR = Dir.INLINE
 
     @classmethod
     def response(cls):  # Server can send to send devicee to sleep
@@ -222,7 +226,6 @@ class HIBERNATION(GPS303Pkt):
 
 class RESET(GPS303Pkt):  # Device sends when it got reset SMS
     PROTO = 0x15
-    DIR = Dir.EXT
 
     @classmethod
     def response(cls):  # Server can send to initiate factory reset
@@ -269,6 +272,7 @@ class _WIFI_POSITIONING(GPS303Pkt):
 
 class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x17
+    DIR = Dir.INLINE
 
     @classmethod
     def inline_response(cls, packet):
@@ -279,6 +283,7 @@ class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
 
 class TIME(GPS303Pkt):
     PROTO = 0x30
+    DIR = Dir.INLINE
 
     @classmethod
     def inline_response(cls, packet):
@@ -416,6 +421,7 @@ class STOP_ALARM(GPS303Pkt):
     def from_packet(cls, length, payload):
         self = super().from_packet(length, payload)
         self.flag = payload[0]
+        return self
 
 
 class SETUP(GPS303Pkt):
@@ -483,12 +489,12 @@ class WIFI_POSITIONING(_WIFI_POSITIONING):
 
 class MANUAL_POSITIONING(GPS303Pkt):
     PROTO = 0x80
-    DIR = Dir.EXT
+    DIR = Dir.OUT
 
     @classmethod
     def from_packet(cls, length, payload):
         self = super().from_packet(length, payload)
-        self.flag = payload[0]
+        self.flag = payload[0] if len(payload) > 0 else None
         self.reason = {
             1: "Incorrect time",
             2: "LBS less",
@@ -498,6 +504,7 @@ class MANUAL_POSITIONING(GPS303Pkt):
             6: "LBS prohibited, WiFi absent",
             7: "GPS spacing < 50 m",
         }.get(self.flag, "Unknown")
+        return self
 
     @classmethod
     def response(cls):
@@ -556,8 +563,11 @@ if True:  # just to indent the code, sorry!
 
 
 def class_by_prefix(prefix):
-    lst = [(name, proto) for name, proto in PROTOS.items()
-            if name.upper().startswith(prefix.upper())]
+    lst = [
+        (name, proto)
+        for name, proto in PROTOS.items()
+        if name.upper().startswith(prefix.upper())
+    ]
     if len(lst) != 1:
         return lst
     _, proto = lst[0]
