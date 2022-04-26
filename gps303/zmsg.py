@@ -7,27 +7,22 @@ __all__ = "Bcast", "Resp"
 
 
 def pack_peer(peeraddr):
-    saddr, port, _x, _y = peeraddr
-    addr6 = ip.ip_address(saddr)
-    addr = addr6.ipv4_mapped
-    if addr is None:
-        addr = addr6
-    return (
-        pack("B", addr.version)
-        + (addr.packed + b"\0\0\0\0\0\0\0\0\0\0\0\0")[:16]
-        + pack("!H", port)
-    )
+    try:
+        saddr, port, _x, _y = peeraddr
+        addr = ip.ip_address(saddr)
+    except ValueError:
+        saddr, port = peeraddr
+        a4 = ip.ip_address(saddr)
+        addr = ip.IPv6Address(b"\0\0\0\0\0\0\0\0\0\0\xff\xff" + a4.packed)
+    return addr.packed + pack("!H", port)
 
 
 def unpack_peer(buffer):
-    version = buffer[0]
-    if version not in (4, 6):
-        return None
-    if version == 4:
-        addr = ip.IPv4Address(buffer[1:5])
-    else:
-        addr = ip.IPv6Address(buffer[1:17])
-    port = unpack("!H", buffer[17:19])[0]
+    a6 = ip.IPv6Address(buffer[:16])
+    port = unpack("!H", buffer[16:])[0]
+    addr = a6.ipv4_mapped
+    if addr is None:
+        addr = a6
     return (addr, port)
 
 
@@ -106,8 +101,8 @@ class Bcast(_Zmsg):
         if self.imei == "0000000000000000":
             self.imei = None
         self.when = unpack("!d", buffer[17:25])[0]
-        self.peeraddr = unpack_peer(buffer[25:44])
-        self.packet = buffer[44:]
+        self.peeraddr = unpack_peer(buffer[25:43])
+        self.packet = buffer[43:]
 
 
 class Resp(_Zmsg):
