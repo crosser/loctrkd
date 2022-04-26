@@ -26,7 +26,7 @@ __all__ = (
     "make_object",
     "parse_message",
     "proto_by_name",
-    "Dir",
+    "Respond",
     "GPS303Pkt",
     "UNKNOWN",
     "LOGIN",
@@ -57,21 +57,63 @@ __all__ = (
 log = getLogger("gps303")
 
 
-class Dir(Enum):
-    IN = 0  # Incoming, no response needed
-    INLINE = 2  # Birirectional, use `inline_response()`
-    EXT = 3  # Birirectional, use external responder
-    OUT = 4  # Outgoing, should not appear on input
+class MetaPkt(type):
+    """
+    For each class corresponding to a message, automatically create
+    two nested classes `In` and `Out` that also inherit from their
+    "nest". Class attribute `IN_KWARGS` defined in the "nest" is
+    copied to the `In` nested class under the name `KWARGS`, and
+    likewise, `OUT_KWARGS` of the nest class is copied as `KWARGS`
+    to the nested class `Out`. In addition, method `encode` is
+    defined in both classes equal to `in_encode()` and `out_encode()`
+    respectively.
+    """
+
+    def __new__(cls, name, bases, attrs):
+        newcls = super().__new__(cls, name, bases, attrs)
+        nestattrs = {"encode": lambda self: self.in_encode()}
+        if "IN_KWARGS" in attrs:
+            nestattrs["KWARGS"] = attrs["IN_KWARGS"]
+        newcls.In = super().__new__(
+            cls,
+            name + ".In",
+            (newcls,) + bases,
+            nestattrs,
+        )
+        nestattrs = {"encode": lambda self: self.out_encode()}
+        if "OUT_KWARGS" in attrs:
+            nestattrs["KWARGS"] = attrs["OUT_KWARGS"]
+        newcls.Out = super().__new__(
+            cls,
+            name + ".Out",
+            (newcls,) + bases,
+            nestattrs,
+        )
+        return newcls
 
 
-class GPS303Pkt:
+class Respond(Enum):
+    NON = 0  # Incoming, no response needed
+    INL = 1  # Birirectional, use `inline_response()`
+    EXT = 2  # Birirectional, use external responder
+
+
+class GPS303Pkt(metaclass=MetaPkt):
+    RESPOND = Respond.NON  # Do not send anything back by default
     PROTO: int
-    DIR = Dir.IN  # Do not send anything back by default
+    # Have these kwargs for now, TODO redo
+    IN_KWARGS = (("length", int, 0), ("payload", bytes, b""))
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        for kw, typ, dfl in self.KWARGS:
+            setattr(self, kw, typ(kwargs.pop(kw, dfl)))
+        if kwargs:
+            print("KWARGS", self.KWARGS)
+            print("kwargs", kwargs)
+            raise TypeError(
+                self.__class__.__name__ + " stray kwargs " + str(kwargs)
+            )
 
     def __repr__(self):
         return "{}({})".format(
@@ -88,27 +130,23 @@ class GPS303Pkt:
             ),
         )
 
+    def in_encode(self):
+        raise NotImplementedError(
+            self.__class__.__name__ + ".encode() not implemented"
+        )
+
+    def out_encode(self):
+        return b""
+
+    @property
+    def packed(self):
+        payload = self.encode()
+        length = len(payload) + 1
+        return pack("BB", length, self.PROTO) + payload
+
     @classmethod
     def from_packet(cls, length, payload):
-        return cls(payload=payload, length=length)
-
-    def to_packet(self):
-        return pack("BB", self.length, self.PROTO) + self.payload
-
-    @classmethod
-    def make_packet(cls, payload):
-        assert isinstance(payload, bytes)
-        length = len(payload) + 1  # plus proto byte
-        # if length > 6:
-        #     length -= 6
-        return pack("BB", length, cls.PROTO) + payload
-
-    @classmethod
-    def inline_response(cls, packet):
-        if cls.DIR is Dir.INLINE:
-            return cls.make_packet(b"")
-        else:
-            return None
+        return cls.In(payload=payload, length=length)
 
 
 class UNKNOWN(GPS303Pkt):
@@ -117,7 +155,7 @@ class UNKNOWN(GPS303Pkt):
 
 class LOGIN(GPS303Pkt):
     PROTO = 0x01
-    DIR = Dir.INLINE
+    RESPOND = Respond.INL
     # Default response for ACK, can also respond with STOP_UPLOAD
 
     @classmethod
@@ -130,23 +168,22 @@ class LOGIN(GPS303Pkt):
 
 class SUPERVISION(GPS303Pkt):
     PROTO = 0x05
-    DIR = Dir.OUT
+    OUT_KWARGS = (("status", int, 1),)
 
-    @classmethod
-    def response(cls, status=0):
+    def out_encode(self):
         # 1: The device automatically answers Pickup effect
         # 2: Automatically Answering Two-way Calls
         # 3: Ring manually answer the two-way call
-        return cls.make_packet(pack("B", status))
+        return pack("B", self.status)
 
 
 class HEARTBEAT(GPS303Pkt):
     PROTO = 0x08
-    DIR = Dir.INLINE
+    RESPOND = Respond.INL
 
 
 class _GPS_POSITIONING(GPS303Pkt):
-    DIR = Dir.INLINE
+    RESPOND = Respond.INL
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -171,11 +208,10 @@ class _GPS_POSITIONING(GPS303Pkt):
         self.flags = flags
         return self
 
-    @classmethod
-    def inline_response(cls, packet):
+    def out_encode(self):
         tup = datetime.utcnow().timetuple()
         ttup = (tup[0] % 100,) + tup[1:6]
-        return cls.make_packet(pack("BBBBBB", *ttup))
+        return pack("BBBBBB", *ttup)
 
 
 class GPS_POSITIONING(_GPS_POSITIONING):
@@ -188,7 +224,8 @@ class GPS_OFFLINE_POSITIONING(_GPS_POSITIONING):
 
 class STATUS(GPS303Pkt):
     PROTO = 0x13
-    DIR = Dir.EXT
+    RESPOND = Respond.EXT
+    OUT_KWARGS = (("upload_interval", int, 25),)
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -208,35 +245,27 @@ class STATUS(GPS303Pkt):
             self.signal = None
         return self
 
-    @classmethod
-    def response(cls, upload_interval=25):  # Set interval in minutes
-        return cls.make_packet(pack("B", upload_interval))
+    def out_encode(self):  # Set interval in minutes
+        return cls.make_packet(pack("B", self.upload_interval))
 
 
-class HIBERNATION(GPS303Pkt):
+class HIBERNATION(GPS303Pkt):  # Server can send to send devicee to sleep
     PROTO = 0x14
-    DIR = Dir.INLINE
-
-    @classmethod
-    def response(cls):  # Server can send to send devicee to sleep
-        return cls.make_packet(b"")
+    RESPOND = Respond.INL
 
 
-class RESET(GPS303Pkt):  # Device sends when it got reset SMS
+class RESET(GPS303Pkt):
+    # Device sends when it got reset SMS
+    # Server can send to initiate factory reset
     PROTO = 0x15
-
-    @classmethod
-    def response(cls):  # Server can send to initiate factory reset
-        return cls.make_packet(b"")
 
 
 class WHITELIST_TOTAL(GPS303Pkt):  # Server sends to initiage sync (0x58)
     PROTO = 0x16
-    DIR = Dir.OUT
+    OUT_KWARGS = (("number", int, 3),)
 
-    @classmethod
-    def response(cls, number=3):  # Number of whitelist entries
-        return cls.make_packet(pack("B", number))
+    def out_encode(self):  # Number of whitelist entries
+        return pack("B", number)
 
 
 class _WIFI_POSITIONING(GPS303Pkt):
@@ -270,59 +299,49 @@ class _WIFI_POSITIONING(GPS303Pkt):
 
 class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x17
-    DIR = Dir.INLINE
+    RESPOND = Respond.INL
 
-    @classmethod
-    def inline_response(cls, packet):
-        return cls.make_packet(
-            bytes.fromhex(datetime.utcnow().strftime("%y%m%d%H%M%S"))
-        )
+    def out_encode(self):
+        return bytes.fromhex(datetime.utcnow().strftime("%y%m%d%H%M%S"))
 
 
 class TIME(GPS303Pkt):
     PROTO = 0x30
-    DIR = Dir.INLINE
+    RESPOND = Respond.INL
 
-    @classmethod
-    def inline_response(cls, packet):
-        return cls.make_packet(
-            pack("!HBBBBB", *datetime.utcnow().timetuple()[:6])
-        )
+    def out_encode(self):
+        return pack("!HBBBBB", *datetime.utcnow().timetuple()[:6])
 
 
 class PROHIBIT_LBS(GPS303Pkt):
     PROTO = 0x33
-    DIR = Dir.OUT
+    OUT_KWARGS = (("status", int, 1),)
 
-    @classmethod
-    def response(cls, status=1):  # Server sent, 0-off, 1-on
-        return cls.make_packet(pack("B", status))
+    def out_encode(self):  # Server sent, 0-off, 1-on
+        return pack("B", self.status)
 
 
 class GPS_LBS_SWITCH_TIMES(GPS303Pkt):
     PROTO = 0x34
-    DIR = Dir.OUT
 
-    @classmethod
-    def response(cls):
-        # Data is in packed decimal
-        # 00/01 - GPS on/off
-        # 00/01 - Don't set / Set upload period
-        # HHMMHHMM - Upload period
-        # 00/01 - LBS on/off
-        # 00/01 - Don't set / Set time of boot
-        # HHMM  - Time of boot
-        # 00/01 - Don't set / Set time of shutdown
-        # HHMM  - Time of shutdown
-        return cls.make_packet(b"")  # TODO
+    # Data is in packed decimal
+    # 00/01 - GPS on/off
+    # 00/01 - Don't set / Set upload period
+    # HHMMHHMM - Upload period
+    # 00/01 - LBS on/off
+    # 00/01 - Don't set / Set time of boot
+    # HHMM  - Time of boot
+    # 00/01 - Don't set / Set time of shutdown
+    # HHMM  - Time of shutdown
+    def out_encode(self):
+        return b""  # TODO
 
 
 class _SET_PHONE(GPS303Pkt):
-    DIR = Dir.OUT
+    OUT_KWARGS = (("phone", str, ""),)
 
-    @classmethod
-    def response(cls, phone):
-        return cls.make_packet(phone.encode())
+    def out_encode(self):
+        return self.phone.encode()
 
 
 class REMOTE_MONITOR_PHONE(_SET_PHONE):
@@ -343,70 +362,68 @@ class MOM_PHONE(_SET_PHONE):
 
 class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
     PROTO = 0x44
-    DIR = Dir.OUT
-
-    @classmethod
-    def response(cls):
-        return cls.make_packet(b"")
 
 
 class GPS_OFF_PERIOD(GPS303Pkt):
     PROTO = 0x46
-    DIR = Dir.OUT
+    OUT_KWARGS = (("onoff", int, 0), ("fm", str, "0000"), ("to", str, "2359"))
 
-    @classmethod
-    def response(cls, onoff=0, fm="0000", to="2359"):
-        return cls.make_packet(
-            pack("B", onoff) + bytes.fromhex(fm) + bytes.fromhex(to)
+    def out_encode(self):
+        return (
+            pack("B", self.onoff)
+            + bytes.fromhex(self.fm)
+            + bytes.fromhex(self.to)
         )
 
 
 class DND_PERIOD(GPS303Pkt):
     PROTO = 0x47
-    DIR = Dir.OUT
+    OUT_KWARGS = (
+        ("onoff", int, 0),
+        ("week", int, 3),
+        ("fm1", str, "0000"),
+        ("to1", str, "2359"),
+        ("fm2", str, "0000"),
+        ("to2", str, "2359"),
+    )
 
-    @classmethod
-    def response(
-        cls, onoff=0, week=3, fm1="0000", to1="2359", fm2="0000", to2="2359"
-    ):
-        return cls.make_packet(
-            pack("B", onoff)
-            + pack("B", week)
-            + bytes.fromhex(fm1)
-            + bytes.fromhex(to1)
-            + bytes.fromhex(fm2)
-            + bytes.fromhex(to2)
+    def out_endode(self):
+        return (
+            pack("B", self.onoff)
+            + pack("B", self.week)
+            + bytes.fromhex(self.fm1)
+            + bytes.fromhex(self.to1)
+            + bytes.fromhex(self.fm2)
+            + bytes.fromhex(self.to2)
         )
 
 
 class RESTART_SHUTDOWN(GPS303Pkt):
     PROTO = 0x48
-    DIR = Dir.OUT
+    OUT_KWARGS = (("flag", int, 2),)
 
-    @classmethod
-    def response(cls, flag=2):
+    def out_encode(self):
         # 1 - restart
         # 2 - shutdown
-        return cls.make_packet(pack("B", flag))
+        return pack("B", self.flag)
 
 
 class DEVICE(GPS303Pkt):
     PROTO = 0x49
-    DIR = Dir.OUT
+    OUT_KWARGS = (("flag", int, 0),)
 
-    @classmethod
-    def response(cls, flag=0):
-        # 0 - Stop looking for equipment
-        # 1 - Start looking for equipment
-        return cls.make_packet(pack("B", flag))
+    # 0 - Stop looking for equipment
+    # 1 - Start looking for equipment
+    def out_encode(self):
+        return pack("B", self.flag)
 
 
 class ALARM_CLOCK(GPS303Pkt):
     PROTO = 0x50
-    DIR = Dir.OUT
 
-    @classmethod
-    def response(cls, alarms=((0, "0000"), (0, "0000"), (0, "0000"))):
+    def out_encode(self):
+        # TODO implement parsing kwargs
+        alarms = ((0, "0000"), (0, "0000"), (0, "0000"))
         return b"".join(
             cls("B", day) + bytes.fromhex(tm) for day, tm in alarms
         )
@@ -424,42 +441,40 @@ class STOP_ALARM(GPS303Pkt):
 
 class SETUP(GPS303Pkt):
     PROTO = 0x57
-    DIR = Dir.EXT
+    RESPOND = Respond.EXT
+    OUT_KWARGS = (  # TODO handle properly
+        ("uploadintervalseconds", int, 0x0300),
+        ("binaryswitch", int, 0b00110001),
+        ("alarms", int, [0, 0, 0]),
+        ("dndtimeswitch", int, 0),
+        ("dndtimes", int, [0, 0, 0]),
+        ("gpstimeswitch", int, 0),
+        ("gpstimestart", int, 0),
+        ("gpstimestop", int, 0),
+        ("phonenumbers", int, ["", "", ""]),
+    )
 
-    @classmethod
-    def response(
-        cls,
-        uploadintervalseconds=0x0300,
-        binaryswitch=0b00110001,
-        alarms=[0, 0, 0],
-        dndtimeswitch=0,
-        dndtimes=[0, 0, 0],
-        gpstimeswitch=0,
-        gpstimestart=0,
-        gpstimestop=0,
-        phonenumbers=["", "", ""],
-    ):
+    def out_encode(self):
         def pack3b(x):
             return pack("!I", x)[1:]
 
-        payload = b"".join(
+        return b"".join(
             [
-                pack("!H", uploadintervalseconds),
-                pack("B", binaryswitch),
+                pack("!H", self.uploadintervalseconds),
+                pack("B", self.binaryswitch),
             ]
-            + [pack3b(el) for el in alarms]
+            + [pack3b(el) for el in self.alarms]
             + [
-                pack("B", dndtimeswitch),
+                pack("B", self.dndtimeswitch),
             ]
-            + [pack3b(el) for el in dndtimes]
+            + [pack3b(el) for el in self.dndtimes]
             + [
-                pack("B", gpstimeswitch),
-                pack("!H", gpstimestart),
-                pack("!H", gpstimestop),
+                pack("B", self.gpstimeswitch),
+                pack("!H", self.gpstimestart),
+                pack("!H", self.gpstimestop),
             ]
-            + [b";".join([el.encode() for el in phonenumbers])]
+            + [b";".join([el.encode() for el in self.phonenumbers])]
         )
-        return cls.make_packet(payload)
 
 
 class SYNCHRONOUS_WHITELIST(GPS303Pkt):
@@ -472,22 +487,17 @@ class RESTORE_PASSWORD(GPS303Pkt):
 
 class WIFI_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x69
-    DIR = Dir.EXT
+    RESPOND = Respond.EXT
+    OUT_KWARGS = (("lat", float, None), ("lon", float, None))
 
-    @classmethod
-    def response(cls, lat=None, lon=None):
-        if lat is None or lon is None:
-            payload = b""
-        else:
-            payload = "{:+#010.8g},{:+#010.8g}".format(lat, lon).encode(
-                "ascii"
-            )
-        return cls.make_packet(payload)
+    def out_encode(self):
+        if self.lat is None or self.lon is None:
+            return b""
+        return "{:+#010.8g},{:+#010.8g}".format(self.lat, self.lon).encode()
 
 
 class MANUAL_POSITIONING(GPS303Pkt):
     PROTO = 0x80
-    DIR = Dir.OUT
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -503,10 +513,6 @@ class MANUAL_POSITIONING(GPS303Pkt):
             7: "GPS spacing < 50 m",
         }.get(self.flag, "Unknown")
         return self
-
-    @classmethod
-    def response(cls):
-        return cls.make_packet(b"")
 
 
 class BATTERY_CHARGE(GPS303Pkt):
@@ -527,7 +533,8 @@ class VIBRATION_RECEIVED(GPS303Pkt):
 
 class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
     PROTO = 0x98
-    DIR = Dir.EXT
+    RESPOND = Respond.EXT
+    OUT_KWARGS = (("interval", int, 10),)
 
     @classmethod
     def from_packet(cls, length, payload):
@@ -535,9 +542,8 @@ class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
         self.interval = unpack("!H", payload[:2])
         return self
 
-    @classmethod
-    def response(cls, interval=10):
-        return cls.make_packet(pack("!H", interval))
+    def out_encode(self):
+        return pack("!H", interval)
 
 
 class SOS_ALARM(GPS303Pkt):
@@ -583,9 +589,10 @@ def proto_of_message(packet):
 def inline_response(packet):
     proto = proto_of_message(packet)
     if proto in CLASSES:
-        return CLASSES[proto].inline_response(packet)
-    else:
-        return None
+        cls = CLASSES[proto]
+        if cls.RESPOND is Respond.INL:
+            return cls.Out().packed
+    return None
 
 
 def make_object(length, proto, payload):

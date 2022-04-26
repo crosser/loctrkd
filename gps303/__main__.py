@@ -27,7 +27,7 @@ def main(conf, opts, args):
     if isinstance(cls, list):
         raise ValueError("Prefix does not select a single class: " + str(cls))
     kwargs = {}
-    resp = Resp(imei=imei, packet=cls.response(**kwargs))
+    resp = Resp(imei=imei, packet=cls.Out(**kwargs).packed)
     log.debug("Response: %s", resp)
     zpush.send(resp.packed)
 

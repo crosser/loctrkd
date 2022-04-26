@@ -47,7 +47,7 @@ def runserver(conf):
             lat, lon = qry_cell(
                 conf["opencellid"]["dbfn"], msg.mcc, msg.gsm_cells
             )
-            resp = Resp(imei=zmsg.imei, packet=msg.response(lat=lat, lon=lon))
+            resp = Resp(imei=zmsg.imei, packet=msg.Out(lat=lat, lon=lon).packed)
             log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
             zpush.send(resp.packed)
 

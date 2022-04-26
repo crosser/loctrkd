@@ -38,7 +38,7 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            if msg.DIR is not Dir.EXT:
+            if msg.RESPOND is not Respond.EXT:
                 log.error(
                     "%s does not expect externally provided response", msg
                 )
@@ -63,7 +63,7 @@ def runserver(conf):
                 ):
                     if key in termconfig:
                         kwargs[key] = termconfig[key]
-            resp = Resp(imei=zmsg.imei, packet=msg.response(**kwargs))
+            resp = Resp(imei=zmsg.imei, packet=msg.Out(**kwargs).packed)
             log.debug("Response: %s", resp)
             zpush.send(resp.packed)
 
