@@ -22,10 +22,8 @@ from struct import pack, unpack
 
 __all__ = (
     "class_by_prefix",
-    "handle_packet",
     "inline_response",
     "make_object",
-    "make_response",
     "parse_message",
     "proto_by_name",
     "Dir",
@@ -616,14 +614,3 @@ def parse_message(packet):
             adjust,
         )
     return make_object(length, proto, payload)
-
-
-def handle_packet(packet):  # DEPRECATED
-    if len(packet) < 6 or packet[:2] != b"xx" or packet[-2:] != b"\r\n":
-        return UNKNOWN.from_packet(len(packet), packet)
-    return parse_message(packet[2:-2])
-
-
-def make_response(msg, **kwargs):  # DEPRECATED
-    inframe = msg.response(**kwargs)
-    return None if inframe is None else b"xx" + inframe + b"\r\n"

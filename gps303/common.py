@@ -3,6 +3,7 @@
 from configparser import ConfigParser
 from getopt import getopt
 from logging import getLogger, StreamHandler, DEBUG, INFO
+from logging.handlers import SysLogHandler
 from sys import argv, stderr, stdout
 
 CONF = "/etc/gps303.conf"
