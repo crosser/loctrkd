@@ -1,0 +1,7 @@
+#!/bin/sh
+
+adduser --system --group --home /var/lib/gps303 gps303
+
+#DEBHELPER#
+
+exit 0
