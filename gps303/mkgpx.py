@@ -7,9 +7,8 @@ from .opencellid import qry_cell
 
 db = connect(sys.argv[1])
 c = db.cursor()
-c.execute(
-    "select timestamp, imei, clntaddr, length, proto, payload from events"
-)
+c.execute("select tstamp, packet from events where proto in ({})"
+        .format(", ".join([str(n) for n in (WIFI_POSITIONING.PROTO, WIFI_OFFLINE_POSITIONING.PROTO, GPS_POSITIONING.PROTO, GPS_OFFLINE_POSITIONING.PROTO)])))
 
 print("""<?xml version="1.0"?>
 <gpx version="1.1"
@@ -21,8 +20,8 @@ xmlns="http://www.topografix.com/GPX/1/1">
     <trkseg>
 """)
 
-for timestamp, imei, clntaddr, length, proto, payload in c:
-    msg = make_object(length, proto, payload)
+for tstamp, packet in c:
+    msg = parse_message(packet)
     if isinstance(msg, (WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING)):
         lat, lon = qry_cell(sys.argv[2], msg.mcc, msg.gsm_cells)
         if lat is None or lon is None:
@@ -31,7 +30,7 @@ for timestamp, imei, clntaddr, length, proto, payload in c:
         lat, lon = msg.latitude, msg.longitude
     else:
         continue
-    isotime = datetime.fromtimestamp(timestamp).astimezone(tz=timezone.utc).isoformat()
+    isotime = datetime.fromtimestamp(tstamp).astimezone(tz=timezone.utc).isoformat()
     isotime = isotime[:isotime.rfind(".")] + "Z"
     trkpt = """      <trkpt lat="{}" lon="{}">
           <time>{}</time>
@@ -39,7 +38,7 @@ for timestamp, imei, clntaddr, length, proto, payload in c:
     print(trkpt)
     if False:
         print(
-            datetime.fromtimestamp(timestamp)
+            datetime.fromtimestamp(tstamp)
             .astimezone(tz=timezone.utc)
             .isoformat(),
             msg,
