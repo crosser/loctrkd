@@ -63,12 +63,12 @@ if __name__.endswith("__main__"):
     db = connect(sys.argv[1])
     c = db.cursor()
     c.execute(
-        """select timestamp, imei, clntaddr, length, proto, payload from events
+        """select select tstamp, packet from events
             where proto in (?, ?)""",
         (WIFI_POSITIONING.PROTO, WIFI_OFFLINE_POSITIONING.PROTO),
     )
-    for timestamp, imei, clntaddr, length, proto, payload in c:
-        obj = make_object(length, proto, payload)
+    for timestamp, imei, clntaddr, proto, payload in c:
+        obj = parse_message(packet)
         avlat, avlon = qry_cell(sys.argv[2], obj.mcc, obj.gsm_cells)
         print(
             "{} {:+#010.8g},{:+#010.8g}".format(

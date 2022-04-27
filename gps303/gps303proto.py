@@ -17,13 +17,11 @@ Forewarnings:
 from datetime import datetime, timezone
 from enum import Enum
 from inspect import isclass
-from logging import getLogger
 from struct import pack, unpack
 
 __all__ = (
     "class_by_prefix",
     "inline_response",
-    "make_object",
     "parse_message",
     "proto_by_name",
     "Respond",
@@ -64,9 +62,8 @@ __all__ = (
     "VIBRATION_RECEIVED",
     "POSITION_UPLOAD_INTERVAL",
     "SOS_ALARM",
+    "UNKNOWN_B3",
 )
-
-log = getLogger("gps303")
 
 
 def intx(x):
@@ -595,6 +592,17 @@ class SOS_ALARM(GPS303Pkt):
     PROTO = 0x99
 
 
+class UNKNOWN_B3(GPS303Pkt):
+    PROTO = 0xb3
+    IN_KWARGS = (("asciidata", str, ""),)
+
+    @classmethod
+    def from_packet(cls, length, payload):
+        self = super().from_packet(length, payload)
+        self.asciidata = payload.decode()
+        return self
+
+
 # Build dicts protocol number -> class and class name -> protocol number
 CLASSES = {}
 PROTOS = {}
@@ -640,29 +648,13 @@ def inline_response(packet):
     return None
 
 
-def make_object(length, proto, payload):
+def parse_message(packet):
+    """ From a packet (without framing bytes) derive the XXX.In object """
+    length, proto = unpack("BB", packet[:2])
+    payload = packet[2:]
     if proto in CLASSES:
         return CLASSES[proto].from_packet(length, payload)
     else:
         retobj = UNKNOWN.from_packet(length, payload)
         retobj.PROTO = proto  # Override class attr with object attr
         return retobj
-
-
-def parse_message(packet):
-    length, proto = unpack("BB", packet[:2])
-    payload = packet[2:]
-    adjust = 2 if proto == STATUS.PROTO else 4  # Weird special case
-    if (
-        proto not in (WIFI_POSITIONING.PROTO, WIFI_OFFLINE_POSITIONING.PROTO)
-        and length > 1
-        and len(payload) + adjust != length
-    ):
-        log.warning(
-            "With proto %d length is %d but payload length is %d+%d",
-            proto,
-            length,
-            len(payload),
-            adjust,
-        )
-    return make_object(length, proto, payload)
