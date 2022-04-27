@@ -40,7 +40,18 @@ __all__ = (
     "WHITELIST_TOTAL",
     "WIFI_OFFLINE_POSITIONING",
     "TIME",
+    "PROHIBIT_LBS",
+    "GPS_LBS_SWITCH_TIMES",
+    "REMOTE_MONITOR_PHONE",
+    "SOS_PHONE",
+    "DAD_PHONE",
     "MOM_PHONE",
+    "STOP_UPLOAD",
+    "GPS_OFF_PERIOD",
+    "DND_PERIOD",
+    "RESTART_SHUTDOWN",
+    "DEVICE",
+    "ALARM_CLOCK",
     "STOP_ALARM",
     "SETUP",
     "SYNCHRONOUS_WHITELIST",
@@ -52,6 +63,7 @@ __all__ = (
     "CHARGER_DISCONNECTED",
     "VIBRATION_RECEIVED",
     "POSITION_UPLOAD_INTERVAL",
+    "SOS_ALARM",
 )
 
 log = getLogger("gps303")
