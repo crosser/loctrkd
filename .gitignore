@@ -1,1 +1,9 @@
 **/__pycache__
+debian/*debhelper*
+debian/*.substvars
+debian/files
+debian/gps303
+debian/python3-gps303
+.pybuild
+build
+gps303.egg-info
