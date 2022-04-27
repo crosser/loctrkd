@@ -275,7 +275,7 @@ class STATUS(GPS303Pkt):
         return self
 
     def out_encode(self):  # Set interval in minutes
-        return cls.make_packet(pack("B", self.upload_interval))
+        return pack("B", self.upload_interval)
 
 
 class HIBERNATION(GPS303Pkt):  # Server can send to send devicee to sleep
@@ -433,7 +433,7 @@ class DND_PERIOD(GPS303Pkt):
 
 class RESTART_SHUTDOWN(GPS303Pkt):
     PROTO = 0x48
-    OUT_KWARGS = (("flag", int, 2),)
+    OUT_KWARGS = (("flag", int, 0),)
 
     def out_encode(self):
         # 1 - restart
