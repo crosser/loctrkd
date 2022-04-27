@@ -71,23 +71,17 @@ class MetaPkt(type):
 
     def __new__(cls, name, bases, attrs):
         newcls = super().__new__(cls, name, bases, attrs)
-        nestattrs = {"encode": lambda self: self.in_encode()}
-        if "IN_KWARGS" in attrs:
-            nestattrs["KWARGS"] = attrs["IN_KWARGS"]
         newcls.In = super().__new__(
             cls,
             name + ".In",
             (newcls,) + bases,
-            nestattrs,
+            {"KWARGS": newcls.IN_KWARGS, "encode": newcls.in_encode},
         )
-        nestattrs = {"encode": lambda self: self.out_encode()}
-        if "OUT_KWARGS" in attrs:
-            nestattrs["KWARGS"] = attrs["OUT_KWARGS"]
         newcls.Out = super().__new__(
             cls,
             name + ".Out",
             (newcls,) + bases,
-            nestattrs,
+            {"KWARGS": newcls.OUT_KWARGS, "encode": newcls.out_encode},
         )
         return newcls
 
@@ -103,6 +97,7 @@ class GPS303Pkt(metaclass=MetaPkt):
     PROTO: int
     # Have these kwargs for now, TODO redo
     IN_KWARGS = (("length", int, 0), ("payload", bytes, b""))
+    OUT_KWARGS = ()
 
     def __init__(self, *args, **kwargs):
         assert len(args) == 0
@@ -445,13 +440,13 @@ class SETUP(GPS303Pkt):
     OUT_KWARGS = (  # TODO handle properly
         ("uploadintervalseconds", int, 0x0300),
         ("binaryswitch", int, 0b00110001),
-        ("alarms", int, [0, 0, 0]),
+        ("alarms", lambda x: x, [0, 0, 0]),
         ("dndtimeswitch", int, 0),
-        ("dndtimes", int, [0, 0, 0]),
+        ("dndtimes", lambda x: x, [0, 0, 0]),
         ("gpstimeswitch", int, 0),
         ("gpstimestart", int, 0),
         ("gpstimestop", int, 0),
-        ("phonenumbers", int, ["", "", ""]),
+        ("phonenumbers", lambda x: x, ["", "", ""]),
     )
 
     def out_encode(self):
