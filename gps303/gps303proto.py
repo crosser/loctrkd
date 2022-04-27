@@ -57,6 +57,40 @@ __all__ = (
 log = getLogger("gps303")
 
 
+def intx(x):
+    if isinstance(x, str):
+        x = int(x, 0)
+    return x
+
+
+def hhmm(x):
+    """Check for the string that represents hours and minutes"""
+    if not isinstance(x, str) or len(x) != 4:
+        raise ValueError(str(x) + " is not a four-character string")
+    hh = int(x[:2])
+    mm = int(x[2:])
+    if hh < 0 or hh > 23 or mm < 0 or mm > 59:
+        raise ValueError(str(x) + " does not contain valid hours and minutes")
+    return x
+
+
+def l3str(x):
+    if isinstance(x, str):
+        x = x.split(",")
+    if len(x) != 3 or not all(isinstance(el, str) for el in x):
+        raise ValueError(str(x) + " is not a list of three strings")
+    return x
+
+
+def l3int(x):
+    if isinstance(x, str):
+        x = x.split(",")
+        x = [int(el) for el in x]
+    if len(x) != 3 or not all(isinstance(el, int) for el in x):
+        raise ValueError(str(x) + " is not a list of three integers")
+    return x
+
+
 class MetaPkt(type):
     """
     For each class corresponding to a message, automatically create
@@ -361,7 +395,11 @@ class STOP_UPLOAD(GPS303Pkt):  # Server response to LOGIN to thwart the device
 
 class GPS_OFF_PERIOD(GPS303Pkt):
     PROTO = 0x46
-    OUT_KWARGS = (("onoff", int, 0), ("fm", str, "0000"), ("to", str, "2359"))
+    OUT_KWARGS = (
+        ("onoff", int, 0),
+        ("fm", hhmm, "0000"),
+        ("to", hhmm, "2359"),
+    )
 
     def out_encode(self):
         return (
@@ -376,10 +414,10 @@ class DND_PERIOD(GPS303Pkt):
     OUT_KWARGS = (
         ("onoff", int, 0),
         ("week", int, 3),
-        ("fm1", str, "0000"),
-        ("to1", str, "2359"),
-        ("fm2", str, "0000"),
-        ("to2", str, "2359"),
+        ("fm1", hhmm, "0000"),
+        ("to1", hhmm, "2359"),
+        ("fm2", hhmm, "0000"),
+        ("to2", hhmm, "2359"),
     )
 
     def out_endode(self):
@@ -437,16 +475,16 @@ class STOP_ALARM(GPS303Pkt):
 class SETUP(GPS303Pkt):
     PROTO = 0x57
     RESPOND = Respond.EXT
-    OUT_KWARGS = (  # TODO handle properly
-        ("uploadintervalseconds", int, 0x0300),
-        ("binaryswitch", int, 0b00110001),
-        ("alarms", lambda x: x, [0, 0, 0]),
+    OUT_KWARGS = (
+        ("uploadintervalseconds", intx, 0x0300),
+        ("binaryswitch", intx, 0b00110001),
+        ("alarms", l3int, [0, 0, 0]),
         ("dndtimeswitch", int, 0),
-        ("dndtimes", lambda x: x, [0, 0, 0]),
+        ("dndtimes", l3int, [0, 0, 0]),
         ("gpstimeswitch", int, 0),
         ("gpstimestart", int, 0),
         ("gpstimestop", int, 0),
-        ("phonenumbers", lambda x: x, ["", "", ""]),
+        ("phonenumbers", l3str, ["", "", ""]),
     )
 
     def out_encode(self):
