@@ -1,9 +1,10 @@
 """ Zeromq messages """
 
+from datetime import datetime, timezone
 import ipaddress as ip
 from struct import pack, unpack
 
-__all__ = "Bcast", "Resp"
+__all__ = "Bcast", "LocEvt", "Resp"
 
 
 def pack_peer(peeraddr):
@@ -119,3 +120,31 @@ class Resp(_Zmsg):
     def decode(self, buffer):
         self.imei = buffer[:16].decode()
         self.packet = buffer[16:]
+
+
+class LocEvt(_Zmsg):
+    """Zmq message with original or approximated location from lookaside"""
+
+    KWARGS = (
+        ("imei", "0000000000000000"),
+        ("devtime", datetime(1970, 1, 1, tzinfo=timezone.utc)),
+        ("lat", 0.0),
+        ("lon", 0.0),
+        ("is_gps", True),
+    )
+
+    @property
+    def packed(self):
+        return self.imei.encode() + pack(
+            "!dddB",
+            self.devtime.replace(tzinfo=timezone.utc).timestamp(),
+            self.lat,
+            self.lon,
+            int(self.is_gps),
+        )
+
+    def decode(self, buffer):
+        self.imei = buffer[:16].decode()
+        when, self.lat, self.lon, is_gps = unpack("!dddB", buffer[16:])
+        self.devtime = datetime.fromtimestamp(when).astimezone(tz=timezone.utc)
+        self.is_gps = bool(is_gps)

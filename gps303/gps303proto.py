@@ -245,8 +245,9 @@ class _GPS_POSITIONING(GPS303Pkt):
         if self.dtime == b"\0\0\0\0\0\0":
             self.devtime = None
         else:
+            yr, mo, da, hr, mi, se = unpack("BBBBBB", self.dtime)
             self.devtime = datetime(
-                *unpack("BBBBBB", self.dtime), tzinfo=timezone.utc
+                2000 + yr, mo, da, hr, mi, se, tzinfo=timezone.utc
             )
         self.gps_data_length = payload[6] >> 4
         self.gps_nb_sat = payload[6] & 0x0F

@@ -8,17 +8,24 @@ import zmq
 from . import common
 from .gps303proto import parse_message, proto_by_name, WIFI_POSITIONING
 from .opencellid import qry_cell
-from .zmsg import Bcast, Resp
+from .zmsg import Bcast, LocEvt, Resp
 
 log = getLogger("gps303/lookaside")
 
 
 def runserver(conf):
     zctx = zmq.Context()
+    zpub = zctx.socket(zmq.PUB)
+    zpub.bind(conf.get("lookaside", "publishurl"))
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
-    topic = pack("B", proto_by_name("WIFI_POSITIONING"))
-    zsub.setsockopt(zmq.SUBSCRIBE, topic)
+    for protoname in (
+        "GPS_POSITIONING",
+        "GPS_OFFLINE_POSITIONING",
+        "WIFI_POSITIONING",
+    ):
+        topic = pack("B", proto_by_name(protoname))
+        zsub.setsockopt(zmq.SUBSCRIBE, topic)
     zpush = zctx.socket(zmq.PUSH)
     zpush.connect(conf.get("collector", "listenurl"))
 
@@ -33,23 +40,29 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            if not isinstance(msg, WIFI_POSITIONING):
-                log.error(
-                    "IMEI %s from %s at %s: %s",
-                    zmsg.imei,
-                    zmsg.peeraddr,
-                    datetime.fromtimestamp(zmsg.when).astimezone(
-                        tz=timezone.utc
-                    ),
-                    msg,
+            if isinstance(msg, WIFI_POSITIONING):
+                is_gps = False
+                lat, lon = qry_cell(
+                    conf["opencellid"]["dbfn"], msg.mcc, msg.gsm_cells
                 )
-                continue
-            lat, lon = qry_cell(
-                conf["opencellid"]["dbfn"], msg.mcc, msg.gsm_cells
+                resp = Resp(
+                    imei=zmsg.imei, packet=msg.Out(lat=lat, lon=lon).packed
+                )
+                log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
+                zpush.send(resp.packed)
+            else:
+                is_gps = True
+                lat = msg.latitude
+                lon = msg.longitude
+            zpub.send(
+                LocEvt(
+                    imei=zmsg.imei,
+                    devtime=msg.devtime,
+                    is_gps=is_gps,
+                    lat=lat,
+                    lon=lon,
+                ).packed
             )
-            resp = Resp(imei=zmsg.imei, packet=msg.Out(lat=lat, lon=lon).packed)
-            log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
-            zpush.send(resp.packed)
 
     except KeyboardInterrupt:
         pass
