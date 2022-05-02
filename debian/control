@@ -14,6 +14,8 @@ Build-Depends: debhelper-compat (= 12),
 Package: python3-gps303
 Architecture: all
 Section: python
-Depends: ${misc:Depends},
+Depends: adduser,
+         ${misc:Depends},
          ${python3:Depends}
 Description: Suite of modules to collect reports from xz303 GPS trackers
+ Consists of collector, storagae, lookaside, and termconfig
