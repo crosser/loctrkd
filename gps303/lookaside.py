@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from logging import getLogger
+from os import umask
 from struct import pack
 import zmq
 
@@ -16,7 +17,9 @@ log = getLogger("gps303/lookaside")
 def runserver(conf):
     zctx = zmq.Context()
     zpub = zctx.socket(zmq.PUB)
+    oldmask = umask(0o117)
     zpub.bind(conf.get("lookaside", "publishurl"))
+    umask(oldmask)
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
     for protoname in (
