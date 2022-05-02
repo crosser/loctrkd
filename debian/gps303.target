@@ -1,9 +1,13 @@
 [Unit]
 Description=GPS303 support suite
-Wants=gps303.collector.service \
+Requires=gps303.collector.service \
+        gps303.storage.service \
+        gps303.termconfig.service \
+        gps303.lookaside.service
+After=gps303.collector.service \
       gps303.storage.service \
       gps303.termconfig.service \
-      gps303.lookaside.service 
+      gps303.lookaside.service
 
 [Install]
 WantedBy=multi-user.target
