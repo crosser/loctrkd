@@ -1,0 +1,4 @@
+python3-gps303: systemd-service-file-refers-to-unusual-wantedby-target gps303.target [lib/systemd/system/gps303.collector.service]
+python3-gps303: systemd-service-file-refers-to-unusual-wantedby-target gps303.target [lib/systemd/system/gps303.lookaside.service]
+python3-gps303: systemd-service-file-refers-to-unusual-wantedby-target gps303.target [lib/systemd/system/gps303.storage.service]
+python3-gps303: systemd-service-file-refers-to-unusual-wantedby-target gps303.target [lib/systemd/system/gps303.termconfig.service]
