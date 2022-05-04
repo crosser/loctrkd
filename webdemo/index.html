@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+	<title>Location</title>
+	<script type="text/javascript">
+		var sts;
+		var log;
+		var ws;
+
+		function init() {
+			sts = document.getElementById("sts");
+			sts.innerHTML = "uninitialized";
+			log = document.getElementById("log");
+			log.innerHTML = "top of log<br>";
+			imei = document.getElementById("imei");
+			send = document.getElementById("send");
+			open_ws();
+		}
+
+		function open_ws() {
+			ws = new WebSocket("ws://localhost:5049");
+			ws.onopen = ws_onopen;
+			ws.onmessage = ws_onmessage;
+			ws.onerror = ws_onerror;
+			ws.onclose = ws_onclose;
+		}
+		function ws_onopen(event) {
+			console.log("ws opened " + event);
+			sts.innerHTML = "open";
+			imei.disabled = false;
+			send.disabled = false;
+		}
+		function ws_onmessage(event) {
+			console.log("message " + event);
+			log.innerHTML += "message " + event + "<br>";
+		}
+		function ws_onerror(event) {
+			console.log("error " + event);
+			sts.innerHTML = "error";
+		}
+		function ws_onclose(event) {
+			console.log("close " + event);
+			sts.innerHTML = "closed";
+			imei.disabled = true;
+			send.disabled = true;
+			setTimeout(open_ws, 5000);
+		}
+
+		function sendIMEI() {
+			console.log("sending " + imei.value);
+			var msg = {
+				imei: imei.value,
+				type: "subscribe",
+				date: Date.now()
+			};
+			ws.send(JSON.stringify(msg));
+			document.title = imei.value;
+			imei.value = "";
+		}
+
+		function handleKey(evt) {
+			if (evt.keyCode === 13 || evt.keyCode === 14) {
+				if (!imei.disabled) {
+					sendIMEI();
+				}
+			}
+		}
+	</script>
+
+</head>
+<body onload="init();">
+	<div style="width:100%; height:2%" id="hdr">
+		<input id="imei" type="text" name="imei"
+		 size="16" maxlength="16" placeholder="Enter IMEI"
+		 autocomplete="off" onkeyup="handleKey(event)">
+		<input type="button" id="send" name="send" value="Send"
+		 onclick="sendIMEI()" disabled>
+	</div>
+	<div style="width:100%; height:96%" id="log"></div>
+	<div style="width:100%; height:2%" id="sts"></div>
+</body>
+</html>

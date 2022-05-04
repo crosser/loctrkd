@@ -1,0 +1,17 @@
+[Unit]
+Description=GPS303 Websocket Gateway Service
+PartOf=gps303.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/gps303
+ExecStart=python3 -m gps303.wsgateway $OPTIONS
+KillSignal=INT
+Restart=on-failure
+StandardOutput=journal
+StandardError=inherit
+User=gps303
+Group=gps303
+
+[Install]
+WantedBy=gps303.target
