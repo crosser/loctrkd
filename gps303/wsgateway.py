@@ -130,9 +130,12 @@ class Client:
             self.write()
         return msgs
 
-    def send(self, imei, message):
+    def wants(self, imei):
+        return True  # TODO: check subscriptions
+
+    def send(self, message):
         # TODO: filter only wanted imei got from the client
-        self.ws_data += self.ws.send(Message(data=message))
+        self.ws_data += self.ws.send(Message(data=message.json))
 
     def write(self):
         try:
@@ -173,10 +176,11 @@ class Clients:
             log.debug("Received: %s", msg)
         return result
 
-    def send(self, msgs):
+    def send(self, msg):
         for clnt in self.by_fd.values():
-            clnt.send(msgs)
-            clnt.write()
+            if clnt.wants(msg.imei):
+                clnt.send(msg)
+                clnt.write()
 
 
 def runserver(conf):
@@ -207,13 +211,14 @@ def runserver(conf):
             tosend = []
             topoll = []
             tostop = []
-            events = poller.poll(1000)
+            events = poller.poll(5000)
+            log.debug("got events: %s", events)
             for sk, fl in events:
                 if sk is zsub:
                     while True:
                         try:
-                            msg = zsub.recv(zmq.NOBLOCK)
-                            tosend.append(LocEvt(msg))
+                            zmsg = LocEvt(zsub.recv(zmq.NOBLOCK))
+                            tosend.append(zmsg)
                         except zmq.Again:
                             break
                 elif sk == tcpfd:

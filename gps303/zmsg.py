@@ -156,6 +156,19 @@ class LocEvt(_Zmsg):
             ).encode()
         )
 
+    # And this is full json that can be sent over websocket etc.
+    @property
+    def json(self):
+        return dumps(
+            {
+                "imei": self.imei,
+                "devtime": str(self.devtime),
+                "latitude": self.lat,
+                "longitude": self.lon,
+                "is-gps": self.is_gps,
+            }
+        )
+
     def decode(self, buffer):
         self.imei = buffer[:16].decode()
         json_data = loads(buffer[16:])

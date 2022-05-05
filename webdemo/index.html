@@ -32,7 +32,7 @@
 		}
 		function ws_onmessage(event) {
 			console.log("message " + event);
-			log.innerHTML += "message " + event + "<br>";
+			log.innerHTML += "message " + event.data + "<br>";
 		}
 		function ws_onerror(event) {
 			console.log("error " + event);
