@@ -1,20 +1,82 @@
-<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
 <head>
 	<title>Location</title>
+	<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+	<script
+	  src="https://www.openstreetmap.org/openlayers/OpenStreetMap.js">
+	</script>
 	<script type="text/javascript">
+		const urlParams = new URLSearchParams(window.location.search);
+		const qimei = urlParams.get("imei");
 		var sts;
-		var log;
 		var ws;
+		var map;
+		var markers;
+		var icon;
 
 		function init() {
+			init_map();
 			sts = document.getElementById("sts");
 			sts.innerHTML = "uninitialized";
-			log = document.getElementById("log");
-			log.innerHTML = "top of log<br>";
 			imei = document.getElementById("imei");
 			send = document.getElementById("send");
+			if (qimei) {
+				imei.value = qimei;
+			}
 			open_ws();
+		}
+
+		function init_map() {
+			map = new OpenLayers.Map ("map", {
+                                controls:[
+                                        new OpenLayers.Control.Navigation(),
+                                        new OpenLayers.Control.PanZoomBar(),
+                                        new OpenLayers.Control.LayerSwitcher(),
+                                        new OpenLayers.Control.Attribution()],
+                                maxExtent: new OpenLayers.Bounds(
+                                        -20037508.34,-20037508.34,
+                                        20037508.34,20037508.34),
+                                maxResolution: 156543.0399,
+                                numZoomLevels: 19,
+                                units: 'm',
+                                projection: new OpenLayers.Projection(
+                                                        "EPSG:900913"),
+                                displayProjection: new OpenLayers.Projection(
+                                                        "EPSG:4326")
+                        });
+			layerMapnik =
+			  new OpenLayers.Layer.OSM.Mapnik("Mapnik");
+                        map.addLayer(layerMapnik)
+			layerTransportMap =
+			  new OpenLayers.Layer.OSM.TransportMap("TransportMap");
+                        map.addLayer(layerTransportMap)
+			layerCycleMap =
+			  new OpenLayers.Layer.OSM.CycleMap("CycleMap");
+                        map.addLayer(layerCycleMap);
+			markers =
+			  new OpenLayers.Layer.Markers("Markers");
+			map.addLayer(markers);
+
+			var size = new OpenLayers.Size(21, 25);
+			var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+			icon = new OpenLayers.Icon(
+	'https://www.openstreetmap.org/openlayers/img/marker.png',size,offset);
+
+			var lonLat =
+			  new OpenLayers.LonLat(0, 0).transform(
+			    new OpenLayers.Projection("EPSG:4326"),
+			      map.getProjectionObject());
+			map.setCenter(lonLat, 1);
+		}
+
+		function set_marker(lon, lat) {
+			console.log("setting marker at " + lon + ", " + lat)
+			var lonLat =
+			  new OpenLayers.LonLat(lon, lat).transform(
+			    new OpenLayers.Projection("EPSG:4326"),
+			      map.getProjectionObject());
+			markers.addMarker(new OpenLayers.Marker(lonLat,icon));
+			map.setCenter(lonLat, 16);
 		}
 
 		function open_ws() {
@@ -29,10 +91,14 @@
 			sts.innerHTML = "open";
 			imei.disabled = false;
 			send.disabled = false;
+			if (imei.value) {
+				sendIMEI();
+			}
 		}
 		function ws_onmessage(event) {
-			console.log("message " + event);
-			log.innerHTML += "message " + event.data + "<br>";
+			console.log("message " + event.data);
+			msg = JSON.parse(event.data)
+			set_marker(+msg.longitude, +msg.latitude);
 		}
 		function ws_onerror(event) {
 			console.log("error " + event);
@@ -76,7 +142,7 @@
 		<input type="button" id="send" name="send" value="Send"
 		 onclick="sendIMEI()" disabled>
 	</div>
-	<div style="width:100%; height:96%" id="log"></div>
-	<div style="width:100%; height:2%" id="sts"></div>
+	<div style="width:100%; height:97%" id="map"></div>
+	<div style="width:100%; height:1%" id="sts"></div>
 </body>
 </html>

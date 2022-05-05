@@ -145,7 +145,7 @@ class LocEvt(_Zmsg):
     @property
     def packed(self):
         return (
-            self.imei.encode()
+                ("0000000000000000" + self.imei)[-16:].encode()
             + dumps(
                 {
                     "devtime": str(self.devtime),

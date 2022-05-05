@@ -37,6 +37,11 @@ def try_http(data, fd, e):
             fd,
             headers,
         )
+        try:
+            pos = resource.index("?")
+            resource = resource[:pos]
+        except ValueError:
+            pass
         if op == "GET":
             if htmldata is None:
                 return (
@@ -212,7 +217,6 @@ def runserver(conf):
             topoll = []
             tostop = []
             events = poller.poll(5000)
-            log.debug("got events: %s", events)
             for sk, fl in events:
                 if sk is zsub:
                     while True:

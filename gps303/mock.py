@@ -3,7 +3,8 @@
 from datetime import datetime, timezone
 from logging import getLogger
 from os import umask
-from sys import argv, stdin
+import readline
+from sys import argv
 import zmq
 
 from . import common
@@ -20,11 +21,11 @@ def main(conf):
     umask(oldmask)
 
     while True:
-        line = stdin.readline()
-        line = line.rstrip("\r\n")
-        if not line:
+        try:
+            line = input("> ")
+        except EOFError:
             break
-        print(line.encode())
+        line = line.rstrip("\r\n")
         args = line.split(" ")
         imei = args[0]
         kwargs = dict([arg.split("=") for arg in args[1:]])
