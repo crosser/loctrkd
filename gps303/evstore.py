@@ -2,7 +2,7 @@
 
 from sqlite3 import connect
 
-__all__ = "initdb", "stow"
+__all__ = "fetch", "initdb", "stow"
 
 DB = None
 
@@ -43,3 +43,15 @@ def stow(**kwargs):
         parms,
     )
     DB.commit()
+
+def fetch(imei, protos, backlog):
+    assert DB is not None
+    protosel = ", ".join(["?" for _ in range(len(protos))])
+    cur = DB.cursor()
+    cur.execute(f"""select packet from events
+                    where proto in ({protosel}) and imei = ?
+                    order by tstamp desc limit ?""",
+                protos + (imei, backlog))
+    result = [row[0] for row in cur]
+    cur.close()
+    return result

@@ -17,6 +17,7 @@ from wsproto.utilities import RemoteProtocolError
 import zmq
 
 from . import common
+from .backlog import blinit, backlog
 from .zmsg import LocEvt
 
 log = getLogger("gps303/wsgateway")
@@ -196,14 +197,7 @@ class Clients:
 
     def recv(self, fd):
         clnt = self.by_fd[fd]
-        msgs = clnt.recv()
-        if msgs is None:
-            return None
-        result = []
-        for msg in msgs:
-            log.debug("Received: %s", msg)
-            result.append(msg)
-        return result
+        return clnt.recv()
 
     def send(self, msg):
         towrite = set()
@@ -230,6 +224,7 @@ class Clients:
 def runserver(conf):
     global htmlfile
 
+    blinit(conf.get("storage", "dbfn"), conf.get("opencellid", "dbfn"))
     htmlfile = conf.get("wsgateway", "htmlfile")
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
@@ -280,6 +275,10 @@ def runserver(conf):
                     else:
                         for msg in received:
                             log.debug("Received from %d: %s", sk, msg)
+                            if msg.get("type", None) == "subscribe":
+                                imei = msg.get("imei")
+                                if imei:
+                                    tosend.extend(backlog(imei[0], 5))
                         towrite.add(sk)
                 elif fl & zmq.POLLOUT:
                     log.debug("Write now open for fd %d", sk)
