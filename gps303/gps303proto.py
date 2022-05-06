@@ -150,15 +150,21 @@ class GPS303Pkt(metaclass=MetaPkt):
     OUT_KWARGS = ()
 
     def __init__(self, *args, **kwargs):
-        assert len(args) == 0
-        for kw, typ, dfl in self.KWARGS:
-            setattr(self, kw, typ(kwargs.pop(kw, dfl)))
-        if kwargs:
-            print("KWARGS", self.KWARGS)
-            print("kwargs", kwargs)
-            raise TypeError(
-                self.__class__.__name__ + " stray kwargs " + str(kwargs)
-            )
+        """
+        Construct the object _either_ from (length, payload),
+        _or_ from the values of individual fields
+        """
+        assert not args or (len(args) == 2 and not kwargs)
+        if args:  # guaranteed to be two arguments at this point
+            self.length, self.payload = args
+            self.decode(self.length, self.payload)
+        else:
+            for kw, typ, dfl in self.KWARGS:
+                setattr(self, kw, typ(kwargs.pop(kw, dfl)))
+            if kwargs:
+                raise ValueError(
+                    self.__class__.__name__ + " stray kwargs " + str(kwargs)
+                )
 
     def __repr__(self):
         return "{}({})".format(
@@ -176,19 +182,23 @@ class GPS303Pkt(metaclass=MetaPkt):
         )
 
     def in_decode(self, length, packet):
+        # Overridden in subclasses, otherwise do not decode payload
         return
 
     def out_decode(self, length, packet):
+        # Necessary to emulate terminal, which is not implemented
         raise NotImplementedError(
             self.__class__.__name__ + ".decode() not implemented"
         )
 
     def in_encode(self):
+        # Necessary to emulate terminal, which is not implemented
         raise NotImplementedError(
             self.__class__.__name__ + ".encode() not implemented"
         )
 
     def out_encode(self):
+        # Overridden in subclasses, otherwise make empty payload
         return b""
 
     @property
@@ -196,14 +206,6 @@ class GPS303Pkt(metaclass=MetaPkt):
         payload = self.encode()
         length = len(payload) + 1
         return pack("BB", length, self.PROTO) + payload
-
-    @classmethod
-    def from_packet(cls, length, payload):
-        self = cls.In()
-        self.length = length
-        self.payload = payload
-        self.decode(length, payload)
-        return self
 
 
 class UNKNOWN(GPS303Pkt):
@@ -651,8 +653,8 @@ def parse_message(packet):
     length, proto = unpack("BB", packet[:2])
     payload = packet[2:]
     if proto in CLASSES:
-        return CLASSES[proto].from_packet(length, payload)
+        return CLASSES[proto].In(length, payload)
     else:
-        retobj = UNKNOWN.from_packet(length, payload)
+        retobj = UNKNOWN.In(length, payload)
         retobj.PROTO = proto  # Override class attr with object attr
         return retobj
