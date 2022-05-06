@@ -1,9 +1,10 @@
-""" Watch for locevt and print them """
+""" Generate and publish locevt from the text input """
 
+import atexit
 from datetime import datetime, timezone
 from logging import getLogger
-from os import umask
-import readline
+from os import path, umask
+from readline import read_history_file, set_history_length, write_history_file
 from sys import argv
 import zmq
 
@@ -12,6 +13,7 @@ from .zmsg import LocEvt
 
 log = getLogger("gps303/watch")
 
+RL_HISTORY = path.join(path.expanduser("~"), ".gps303_history")
 
 def main(conf):
     zctx = zmq.Context()
@@ -19,6 +21,12 @@ def main(conf):
     oldmask = umask(0o117)
     zpub.bind(conf.get("lookaside", "publishurl"))
     umask(oldmask)
+    try:
+        read_history_file(RL_HISTORY)
+    except FileNotFoundError:
+        pass
+    set_history_length(1000)
+    atexit.register(write_history_file, RL_HISTORY)
 
     while True:
         try:
