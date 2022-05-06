@@ -8,12 +8,20 @@
 	<script type="text/javascript">
 		const urlParams = new URLSearchParams(window.location.search);
 		const qimei = urlParams.get("imei");
-		const wsproto = window.protocol === "https" ? "wss" : "ws";
-		const wshost = window.hostname ? window.hostname : "localhost";
-		const wsport = window.port ? window.port : 5049;
+
+		const ourl = new URL(window.location);
+		const wsproto = ourl.protocol === "https" ? "wss" : "ws";
+		const wshost = ourl.hostname ? ourl.hostname : "localhost";
+		const wsport = ourl.port ? ourl.port : 5049;
+
+		const imeis = new Set();
 
 		var sts;
 		var ws;
+		var imei;
+		var send;
+		var subslist;
+		var tstamp;
 		var map;
 		var markers;
 		var icon;
@@ -24,6 +32,9 @@
 			sts.innerHTML = "uninitialized";
 			imei = document.getElementById("imei");
 			send = document.getElementById("send");
+			clear = document.getElementById("clear");
+			subslist = document.getElementById("subslist");
+			tstamp = document.getElementById("tstamp");
 			if (qimei) {
 				imei.value = qimei;
 			}
@@ -100,13 +111,13 @@
 			sts.innerHTML = "open";
 			imei.disabled = false;
 			send.disabled = false;
-			if (imei.value) {
-				sendIMEI();
-			}
+			clear.disabled = false;
+			sendIMEI();
 		}
 		function ws_onmessage(event) {
 			console.log("message " + event.data);
 			msg = JSON.parse(event.data)
+			tstamp.innerHTML = msg.devtime;
 			set_marker(+msg.longitude, +msg.latitude);
 		}
 		function ws_onerror(event) {
@@ -118,25 +129,35 @@
 			sts.innerHTML = "closed";
 			imei.disabled = true;
 			send.disabled = true;
+			clear.disabled = true;
 			setTimeout(open_ws, 5000);
 		}
 
-		function sendIMEI() {
-			console.log("sending " + imei.value);
+		function sendIMEI(do_clear) {
+			if (do_clear) {
+				imeis.clear();
+			} else {
+				if (imei.value) {
+					imeis.add(imei.value);
+				}
+			}
+			const imstr = Array.from(imeis).join(",");
+			document.title = imstr;
+			subslist.innerHTML = imstr;
 			var msg = {
-				imei: imei.value,
+				imei: Array.from(imeis),
 				type: "subscribe",
 				date: Date.now()
 			};
+			console.log("sending" + JSON.stringify(msg));
 			ws.send(JSON.stringify(msg));
-			document.title = imei.value;
 			imei.value = "";
 		}
 
 		function handleKey(evt) {
 			if (evt.keyCode === 13 || evt.keyCode === 14) {
 				if (!imei.disabled) {
-					sendIMEI();
+					sendIMEI(false);
 				}
 			}
 		}
@@ -149,7 +170,11 @@
 		 size="16" maxlength="16" placeholder="Enter IMEI"
 		 autocomplete="off" onkeyup="handleKey(event)">
 		<input type="button" id="send" name="send" value="Send"
-		 onclick="sendIMEI()" disabled>
+		 onclick="sendIMEI(false)" disabled>
+		<input type="button" id="clear" name="clear" value="Clear"
+		 onclick="sendIMEI(true)" disabled>
+		<span id="subslist"></span>
+		<span id="tstamp" style="float:right"></span>
 	</div>
 	<div style="width:100%; height:97%" id="map"></div>
 	<div style="width:100%; height:1%" id="sts"></div>
