@@ -24,7 +24,6 @@ def runserver(conf):
     zsub.connect(conf.get("collector", "publishurl"))
     for protoname in (
         "GPS_POSITIONING",
-        "GPS_OFFLINE_POSITIONING",
         "WIFI_POSITIONING",
     ):
         topic = pack("B", proto_by_name(protoname))
