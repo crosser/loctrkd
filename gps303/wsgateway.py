@@ -19,11 +19,11 @@ from . import common
 from .zmsg import LocEvt
 
 log = getLogger("gps303/wsgateway")
-htmldata = None
+htmlfile = None
 
 
 def try_http(data, fd, e):
-    global htmldata
+    global htmlfile
     try:
         lines = data.decode().split("\r\n")
         request = lines[0]
@@ -43,19 +43,28 @@ def try_http(data, fd, e):
         except ValueError:
             pass
         if op == "GET":
-            if htmldata is None:
+            if htmlfile is None:
                 return (
                     f"{proto} 500 No data configured\r\n"
                     f"Content-Type: text/plain\r\n\r\n"
                     f"HTML data not configure on the server\r\n".encode()
                 )
             elif resource == "/":
-                length = len(htmldata.encode("utf-8"))
-                return (
-                    f"{proto} 200 Ok\r\n"
-                    f"Content-Type: text/html; charset=utf-8\r\n"
-                    f"Content-Length: {length:d}\r\n\r\n" + htmldata
-                ).encode("utf-8")
+                try:
+                    with open(htmlfile, "rb") as fl:
+                        htmldata = fl.read()
+                    length = len(htmldata)
+                    return (
+                        f"{proto} 200 Ok\r\n"
+                        f"Content-Type: text/html; charset=utf-8\r\n"
+                        f"Content-Length: {len(htmldata):d}\r\n\r\n"
+                    ).encode("utf-8") + htmldata
+                except OSError:
+                    return (
+                        f"{proto} 500 File not found\r\n"
+                        f"Content-Type: text/plain\r\n\r\n"
+                        f'HTML file could not be opened\r\n'.encode()
+                    )
             else:
                 return (
                     f"{proto} 404 File not found\r\n"
@@ -200,12 +209,9 @@ class Clients:
 
 
 def runserver(conf):
-    global htmldata
-    try:
-        with open(conf.get("wsgateway", "htmlfile"), encoding="utf-8") as fl:
-            htmldata = fl.read()
-    except OSError:
-        pass
+    global htmlfile
+
+    htmlfile = conf.get("wsgateway", "htmlfile")
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("lookaside", "publishurl"))
@@ -227,7 +233,7 @@ def runserver(conf):
             topoll = []
             tostop = []
             towrite = set()
-            events = poller.poll(5000)
+            events = poller.poll()
             for sk, fl in events:
                 if sk is zsub:
                     while True:
