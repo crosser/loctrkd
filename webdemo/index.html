@@ -8,6 +8,10 @@
 	<script type="text/javascript">
 		const urlParams = new URLSearchParams(window.location.search);
 		const qimei = urlParams.get("imei");
+		const wsproto = window.protocol === "https" ? "wss" : "ws";
+		const wshost = window.hostname ? window.hostname : "localhost";
+		const wsport = window.port ? window.port : 5049;
+
 		var sts;
 		var ws;
 		var map;
@@ -80,7 +84,12 @@
 		}
 
 		function open_ws() {
-			ws = new WebSocket("ws://localhost:5049");
+			wsurl = new URL("ws://localhost/");
+			wsurl.protocol = wsproto
+			wsurl.hostname = wshost
+			wsurl.port = wsport
+			console.log("wsurl is " + wsurl)
+			ws = new WebSocket(wsurl);
 			ws.onopen = ws_onopen;
 			ws.onmessage = ws_onmessage;
 			ws.onerror = ws_onerror;
