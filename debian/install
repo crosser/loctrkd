@@ -1,1 +1,2 @@
 debian/gps303.conf etc/
+webdemo/index.html var/lib/gps303/

@@ -14,3 +14,4 @@ override_dh_installsystemd:
 	dh_installsystemd --name=gps303.storage
 	dh_installsystemd --name=gps303.lookaside
 	dh_installsystemd --name=gps303.termconfig
+	dh_installsystemd --name=gps303.wsgateway
