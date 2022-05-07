@@ -1,6 +1,6 @@
 """ sqlite event store """
 
-from sqlite3 import connect
+from sqlite3 import connect, OperationalError
 
 __all__ = "fetch", "initdb", "stow"
 
@@ -10,6 +10,7 @@ SCHEMA = """create table if not exists events (
     tstamp real not null,
     imei text,
     peeraddr text not null,
+    is_incoming int not null default TRUE,
     proto int not null,
     packet blob
 )"""
@@ -18,7 +19,11 @@ SCHEMA = """create table if not exists events (
 def initdb(dbname):
     global DB
     DB = connect(dbname)
-    DB.execute(SCHEMA)
+    try:
+        DB.execute("""alter table events add column
+                is_incoming int not null default TRUE""")
+    except OperationalError:
+        DB.execute(SCHEMA)
 
 
 def stow(**kwargs):
