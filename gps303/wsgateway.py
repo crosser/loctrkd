@@ -277,8 +277,9 @@ def runserver(conf):
                             log.debug("Received from %d: %s", sk, msg)
                             if msg.get("type", None) == "subscribe":
                                 imei = msg.get("imei")
-                                if imei:
-                                    tosend.extend(backlog(imei[0], 5))
+                                numback = msg.get("backlog", 5)
+                                for elem in imei:
+                                    tosend.extend(backlog(elem, numback))
                         towrite.add(sk)
                 elif fl & zmq.POLLOUT:
                     log.debug("Write now open for fd %d", sk)

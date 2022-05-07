@@ -1,167 +1,176 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
 <head>
-	<title>Location</title>
-	<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
-	<script
-	  src="https://www.openstreetmap.org/openlayers/OpenStreetMap.js">
-	</script>
-	<script type="text/javascript">
-		const urlParams = new URLSearchParams(window.location.search);
-		const qimei = urlParams.get("imei");
+<title>Location</title>
+<script src="http://www.openlayers.org/api/OpenLayers.js">
+</script>
+<script src="https://www.openstreetmap.org/openlayers/OpenStreetMap.js">
+</script>
+<script type="text/javascript">
+	const urlParams = new URLSearchParams(window.location.search);
+	const qimei = urlParams.get("imei");
 
-		const ourl = new URL(window.location);
-		const wsproto = ourl.protocol === "https" ? "wss" : "ws";
-		const wshost = ourl.hostname ? ourl.hostname : "localhost";
-		const wsport = ourl.port ? ourl.port : 5049;
+	const ourl = new URL(window.location);
+	const wsproto = ourl.protocol === "https" ? "wss" : "ws";
+	const wshost = ourl.hostname ? ourl.hostname : "localhost";
+	const wsport = ourl.port ? ourl.port : 5049;
 
-		const imeis = new Set();
+	const imeis = new Set();
+	const locations = new Array();
+	const maxmarkers = 5;
 
-		var sts;
-		var ws;
-		var imei;
-		var send;
-		var subslist;
-		var tstamp;
-		var map;
-		var markers;
-		var icon;
+	var sts;
+	var ws;
+	var imei;
+	var send;
+	var subslist;
+	var tstamp;
+	var map;
+	var markers;
+	var icon;
 
-		function init() {
-			init_map();
-			sts = document.getElementById("sts");
-			sts.innerHTML = "uninitialized";
-			imei = document.getElementById("imei");
-			send = document.getElementById("send");
-			clear = document.getElementById("clear");
-			subslist = document.getElementById("subslist");
-			tstamp = document.getElementById("tstamp");
-			if (qimei) {
-				imei.value = qimei;
-			}
-			open_ws();
+	function init() {
+		init_map();
+		sts = document.getElementById("sts");
+		sts.innerHTML = "uninitialized";
+		imei = document.getElementById("imei");
+		send = document.getElementById("send");
+		clear = document.getElementById("clear");
+		subslist = document.getElementById("subslist");
+		tstamp = document.getElementById("tstamp");
+		if (qimei) {
+			imei.value = qimei;
 		}
+		open_ws();
+	}
 
-		function init_map() {
-			map = new OpenLayers.Map ("map", {
-                                controls:[
-                                        new OpenLayers.Control.Navigation(),
-                                        new OpenLayers.Control.PanZoomBar(),
-                                        new OpenLayers.Control.LayerSwitcher(),
-                                        new OpenLayers.Control.Attribution()],
-                                maxExtent: new OpenLayers.Bounds(
-                                        -20037508.34,-20037508.34,
-                                        20037508.34,20037508.34),
-                                maxResolution: 156543.0399,
-                                numZoomLevels: 19,
-                                units: 'm',
-                                projection: new OpenLayers.Projection(
-                                                        "EPSG:900913"),
-                                displayProjection: new OpenLayers.Projection(
-                                                        "EPSG:4326")
-                        });
-			layerMapnik =
-			  new OpenLayers.Layer.OSM.Mapnik("Mapnik");
-                        map.addLayer(layerMapnik)
-			layerTransportMap =
-			  new OpenLayers.Layer.OSM.TransportMap("TransportMap");
-                        map.addLayer(layerTransportMap)
-			layerCycleMap =
-			  new OpenLayers.Layer.OSM.CycleMap("CycleMap");
-                        map.addLayer(layerCycleMap);
-			markers =
-			  new OpenLayers.Layer.Markers("Markers");
-			map.addLayer(markers);
+	function init_map() {
+		map = new OpenLayers.Map ("map", {
+			controls:[
+				new OpenLayers.Control.Navigation(),
+				new OpenLayers.Control.PanZoomBar(),
+				new OpenLayers.Control.LayerSwitcher(),
+				new OpenLayers.Control.Attribution()],
+			maxExtent: new OpenLayers.Bounds(
+				-20037508.34,-20037508.34,
+				20037508.34,20037508.34),
+			maxResolution: 156543.0399,
+			numZoomLevels: 19,
+			units: 'm',
+			projection: new OpenLayers.Projection(
+						"EPSG:900913"),
+			displayProjection: new OpenLayers.Projection(
+						"EPSG:4326")
+		});
+		layerMapnik =
+		  new OpenLayers.Layer.OSM.Mapnik("Mapnik");
+		map.addLayer(layerMapnik)
+		layerTransportMap =
+		  new OpenLayers.Layer.OSM.TransportMap("TransportMap");
+		map.addLayer(layerTransportMap)
+		layerCycleMap =
+		  new OpenLayers.Layer.OSM.CycleMap("CycleMap");
+		map.addLayer(layerCycleMap);
+		markers =
+		  new OpenLayers.Layer.Markers("Markers");
+		map.addLayer(markers);
 
-			var size = new OpenLayers.Size(21, 25);
-			var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
-			icon = new OpenLayers.Icon(
-	'https://www.openstreetmap.org/openlayers/img/marker.png',size,offset);
+		var size = new OpenLayers.Size(21, 25);
+		var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+		icon = new OpenLayers.Icon(
+'https://www.openstreetmap.org/openlayers/img/marker.png',size,offset);
 
-			var lonLat =
-			  new OpenLayers.LonLat(0, 0).transform(
-			    new OpenLayers.Projection("EPSG:4326"),
-			      map.getProjectionObject());
-			map.setCenter(lonLat, 1);
+		var lonLat =
+		  new OpenLayers.LonLat(0, 0).transform(
+		    new OpenLayers.Projection("EPSG:4326"),
+		      map.getProjectionObject());
+		map.setCenter(lonLat, 1);
+	}
+
+	function set_marker(msg) {
+		if (locations.push(msg) > maxmarkers) {
+			locations.shift();
 		}
-
-		function set_marker(lon, lat) {
-			console.log("setting marker at " + lon + ", " + lat)
-			var lonLat =
-			  new OpenLayers.LonLat(lon, lat).transform(
+		console.log("new marker list " + JSON.stringify(locations));
+		tstamp.innerHTML = msg.devtime;
+		var lonLat;
+		// TODO: figure how to have multiple markers and/or track
+		for (const loc of locations) {
+			lonLat = new OpenLayers.LonLat(+loc.longitude,
+					  +loc.latitude).transform(
 			    new OpenLayers.Projection("EPSG:4326"),
 			      map.getProjectionObject());
 			markers.addMarker(new OpenLayers.Marker(lonLat,icon));
-			map.setCenter(lonLat, 16);
 		}
+		map.setCenter(lonLat, 16);
+	}
 
-		function open_ws() {
-			wsurl = new URL("ws://localhost/");
-			wsurl.protocol = wsproto
-			wsurl.hostname = wshost
-			wsurl.port = wsport
-			console.log("wsurl is " + wsurl)
-			ws = new WebSocket(wsurl);
-			ws.onopen = ws_onopen;
-			ws.onmessage = ws_onmessage;
-			ws.onerror = ws_onerror;
-			ws.onclose = ws_onclose;
-		}
-		function ws_onopen(event) {
-			console.log("ws opened " + event);
-			sts.innerHTML = "open";
-			imei.disabled = false;
-			send.disabled = false;
-			clear.disabled = false;
-			sendIMEI();
-		}
-		function ws_onmessage(event) {
-			console.log("message " + event.data);
-			msg = JSON.parse(event.data)
-			tstamp.innerHTML = msg.devtime;
-			set_marker(+msg.longitude, +msg.latitude);
-		}
-		function ws_onerror(event) {
-			console.log("error " + event);
-			sts.innerHTML = "error";
-		}
-		function ws_onclose(event) {
-			console.log("close " + event);
-			sts.innerHTML = "closed";
-			imei.disabled = true;
-			send.disabled = true;
-			clear.disabled = true;
-			setTimeout(open_ws, 5000);
-		}
+	function open_ws() {
+		wsurl = new URL("ws://localhost/");
+		wsurl.protocol = wsproto
+		wsurl.hostname = wshost
+		wsurl.port = wsport
+		console.log("wsurl is " + wsurl)
+		ws = new WebSocket(wsurl);
+		ws.onopen = ws_onopen;
+		ws.onmessage = ws_onmessage;
+		ws.onerror = ws_onerror;
+		ws.onclose = ws_onclose;
+	}
+	function ws_onopen(event) {
+		console.log("ws opened " + event);
+		sts.innerHTML = "online";
+		imei.disabled = false;
+		send.disabled = false;
+		clear.disabled = false;
+		sendIMEI();
+	}
+	function ws_onmessage(event) {
+		console.log("message " + event.data);
+		set_marker(JSON.parse(event.data));
+	}
+	function ws_onerror(event) {
+		console.log("error " + event);
+		sts.innerHTML = "error: " + event;
+	}
+	function ws_onclose(event) {
+		console.log("close " + event);
+		sts.innerHTML = "offline";
+		imei.disabled = true;
+		send.disabled = true;
+		clear.disabled = true;
+		setTimeout(open_ws, 5000);
+	}
 
-		function sendIMEI(do_clear) {
-			if (do_clear) {
-				imeis.clear();
-			} else {
-				if (imei.value) {
-					imeis.add(imei.value);
-				}
-			}
-			const imstr = Array.from(imeis).join(",");
-			document.title = imstr;
-			subslist.innerHTML = imstr;
-			var msg = {
-				imei: Array.from(imeis),
-				type: "subscribe",
-				date: Date.now()
-			};
-			console.log("sending" + JSON.stringify(msg));
-			ws.send(JSON.stringify(msg));
-			imei.value = "";
-		}
-
-		function handleKey(evt) {
-			if (evt.keyCode === 13 || evt.keyCode === 14) {
-				if (!imei.disabled) {
-					sendIMEI(false);
-				}
+	function sendIMEI(do_clear) {
+		if (do_clear) {
+			imeis.clear();
+		} else {
+			if (imei.value) {
+				imeis.add(imei.value);
 			}
 		}
-	</script>
+		const imstr = Array.from(imeis).join(",");
+		document.title = imstr;
+		subslist.innerHTML = imstr;
+		var msg = {
+			imei: Array.from(imeis),
+			type: "subscribe",
+			date: Date.now(),
+			backlog: 1
+		};
+		console.log("sending" + JSON.stringify(msg));
+		ws.send(JSON.stringify(msg));
+		imei.value = "";
+	}
+
+	function handleKey(evt) {
+		if (evt.keyCode === 13 || evt.keyCode === 14) {
+			if (!imei.disabled) {
+				sendIMEI(false);
+			}
+		}
+	}
+</script>
 
 </head>
 <body onload="init();">
