@@ -5,7 +5,7 @@ from logging import getLogger
 import zmq
 
 from . import common
-from .zmsg import LocEvt
+from .zmsg import Bcast
 
 log = getLogger("gps303/watch")
 
@@ -13,13 +13,14 @@ log = getLogger("gps303/watch")
 def runserver(conf):
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
-    zsub.connect(conf.get("lookaside", "publishurl"))
+    zsub.connect(conf.get("collector", "publishurl"))
     zsub.setsockopt(zmq.SUBSCRIBE, b"")
 
     try:
         while True:
-            zmsg = LocEvt(zsub.recv())
-            print(zmsg)
+            zmsg = Bcast(zsub.recv())
+            msg = parse_message(zmsg.packet)
+            print(zmsg.imei, msg)
     except KeyboardInterrupt:
         pass
 
