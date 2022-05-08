@@ -21,6 +21,9 @@ c.execute(
 )
 
 for tstamp, imei, peeraddr, proto, packet in c:
+    if len(packet) >  packet[0] + 1:
+        print("proto", packet[1] , "datalen", len(packet),
+                "msg.length", packet[0], file=sys.stderr)
     msg = parse_message(packet)
     print(
         datetime.fromtimestamp(tstamp)

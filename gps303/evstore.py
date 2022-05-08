@@ -31,6 +31,7 @@ def stow(**kwargs):
     parms = {
         k: kwargs[k] if k in kwargs else v
         for k, v in (
+            ("is_incoming", True),
             ("peeraddr", None),
             ("when", 0.0),
             ("imei", None),
@@ -41,9 +42,9 @@ def stow(**kwargs):
     assert len(kwargs) <= len(parms)
     DB.execute(
         """insert or ignore into events
-                (tstamp, imei, peeraddr, proto, packet)
+                (tstamp, imei, peeraddr, proto, packet, is_incoming)
                 values
-                (:when, :imei, :peeraddr, :proto, :packet)
+                (:when, :imei, :peeraddr, :proto, :packet, :is_incoming)
         """,
         parms,
     )

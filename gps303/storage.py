@@ -25,7 +25,8 @@ def runserver(conf):
         while True:
             zmsg = Bcast(zsub.recv())
             log.debug(
-                "IMEI %s from %s at %s: %s",
+                "%s IMEI %s from %s at %s: %s",
+                "I" if zmsg.is_incoming else "O",
                 zmsg.imei,
                 zmsg.peeraddr,
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
@@ -37,6 +38,7 @@ def runserver(conf):
             else:
                 peeraddr = None
             stow(
+                is_incoming=zmsg.is_incoming,
                 peeraddr=peeraddr,
                 when=zmsg.when,
                 imei=zmsg.imei,

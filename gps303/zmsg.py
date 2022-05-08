@@ -3,12 +3,16 @@
 import ipaddress as ip
 from struct import pack, unpack
 
-__all__ = "Bcast", "Resp"
+__all__ = "Bcast", "Resp", "topic"
 
 
 def pack_peer(peeraddr):
     try:
-        saddr, port, _x, _y = peeraddr
+        if peeraddr is None:
+            saddr = "::"
+            port = 0
+        else:
+            saddr, port, _x, _y = peeraddr
         addr = ip.ip_address(saddr)
     except ValueError:
         saddr, port = peeraddr
@@ -75,10 +79,17 @@ class _Zmsg:
         )
 
 
+def topic(proto, is_incoming=True, imei=None):
+    return (
+        pack("BB", is_incoming, proto) + b"" if imei is None else imei.encode()
+    )
+
+
 class Bcast(_Zmsg):
     """Zmq message to broadcast what was received from the terminal"""
 
     KWARGS = (
+        ("is_incoming", True),
         ("proto", 256),
         ("imei", None),
         ("when", None),
@@ -89,7 +100,7 @@ class Bcast(_Zmsg):
     @property
     def packed(self):
         return (
-            pack("B", self.proto)
+            pack("BB", int(self.is_incoming), self.proto)
             + ("0000000000000000" if self.imei is None else self.imei).encode()
             + (
                 b"\0\0\0\0\0\0\0\0"
@@ -101,26 +112,32 @@ class Bcast(_Zmsg):
         )
 
     def decode(self, buffer):
-        self.proto = buffer[0]
-        self.imei = buffer[1:17].decode()
+        self.is_incoming = bool(buffer[0])
+        self.proto = buffer[1]
+        self.imei = buffer[2:18].decode()
         if self.imei == "0000000000000000":
             self.imei = None
-        self.when = unpack("!d", buffer[17:25])[0]
-        self.peeraddr = unpack_peer(buffer[25:43])
-        self.packet = buffer[43:]
+        self.when = unpack("!d", buffer[18:26])[0]
+        self.peeraddr = unpack_peer(buffer[26:44])
+        self.packet = buffer[44:]
 
 
 class Resp(_Zmsg):
     """Zmq message received from a third party to send to the terminal"""
 
-    KWARGS = (("imei", None), ("packet", b""))
+    KWARGS = (("imei", None), ("when", None), ("packet", b""))
 
     @property
     def packed(self):
         return (
             "0000000000000000" if self.imei is None else self.imei.encode()
-        ) + self.packet
+        ) + (
+                b"\0\0\0\0\0\0\0\0"
+                if self.when is None
+                else pack("!d", self.when)
+            ) + self.packet
 
     def decode(self, buffer):
         self.imei = buffer[:16].decode()
-        self.packet = buffer[16:]
+        self.when = unpack("!d", buffer[16:24])[0]
+        self.packet = buffer[24:]

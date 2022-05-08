@@ -186,10 +186,8 @@ class GPS303Pkt(metaclass=MetaPkt):
         return
 
     def out_decode(self, length, packet):
-        # Necessary to emulate terminal, which is not implemented
-        raise NotImplementedError(
-            self.__class__.__name__ + ".decode() not implemented"
-        )
+        # Overridden in subclasses, otherwise do not decode payload
+        return
 
     def in_encode(self):
         # Necessary to emulate terminal, which is not implemented
@@ -536,12 +534,19 @@ class RESTORE_PASSWORD(GPS303Pkt):
 class WIFI_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x69
     RESPOND = Respond.EXT
-    OUT_KWARGS = (("lat", float, None), ("lon", float, None))
+    OUT_KWARGS = (("latitude", float, None), ("longitude", float, None))
 
     def out_encode(self):
-        if self.lat is None or self.lon is None:
+        if self.latitude is None or self.longitude is None:
             return b""
-        return "{:+#010.8g},{:+#010.8g}".format(self.lat, self.lon).encode()
+        return "{:+#010.8g},{:+#010.8g}".format(
+            self.latitude, self.longitude
+        ).encode()
+
+    def out_decode(self, length, payload):
+        lat, lon = payload.decode().split(",")
+        self.latitude = float(lat)
+        self.longitude = float(lon)
 
 
 class MANUAL_POSITIONING(GPS303Pkt):
@@ -648,12 +653,15 @@ def inline_response(packet):
     return None
 
 
-def parse_message(packet):
+def parse_message(packet, is_incoming=True):
     """From a packet (without framing bytes) derive the XXX.In object"""
     length, proto = unpack("BB", packet[:2])
     payload = packet[2:]
     if proto in CLASSES:
-        return CLASSES[proto].In(length, payload)
+        if is_incoming:
+            return CLASSES[proto].In(length, payload)
+        else:
+            return CLASSES[proto].Out(length, payload)
     else:
         retobj = UNKNOWN.In(length, payload)
         retobj.PROTO = proto  # Override class attr with object attr

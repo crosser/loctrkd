@@ -7,7 +7,7 @@ import zmq
 
 from . import common
 from .gps303proto import *
-from .zmsg import Bcast, Resp
+from .zmsg import Bcast, Resp, topic
 
 log = getLogger("gps303/termconfig")
 
@@ -22,8 +22,8 @@ def runserver(conf):
         "SETUP",
         "POSITION_UPLOAD_INTERVAL",
     ):
-        topic = pack("B", proto_by_name(protoname))
-        zsub.setsockopt(zmq.SUBSCRIBE, topic)
+        tosub = topic(proto_by_name(protoname))
+        zsub.setsockopt(zmq.SUBSCRIBE, tosub)
     zpush = zctx.socket(zmq.PUSH)
     zpush.connect(conf.get("collector", "listenurl"))
 

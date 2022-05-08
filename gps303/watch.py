@@ -5,6 +5,7 @@ from logging import getLogger
 import zmq
 
 from . import common
+from .gps303proto import parse_message
 from .zmsg import Bcast
 
 log = getLogger("gps303/watch")
@@ -19,8 +20,8 @@ def runserver(conf):
     try:
         while True:
             zmsg = Bcast(zsub.recv())
-            msg = parse_message(zmsg.packet)
-            print(zmsg.imei, msg)
+            msg = parse_message(zmsg.packet, zmsg.is_incoming)
+            print("I" if zmsg.is_incoming else "O", zmsg.imei, msg)
     except KeyboardInterrupt:
         pass
 

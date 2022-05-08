@@ -166,7 +166,16 @@ def runserver(conf):
                     while True:
                         try:
                             msg = zpull.recv(zmq.NOBLOCK)
-                            tosend.append(Resp(msg))
+                            zmsg = Resp(msg)
+                            zpub.send(
+                                Bcast(
+                                    is_incoming=False,
+                                    proto=proto_of_message(zmsg.packet),
+                                    imei=zmsg.imei,
+                                    packet=zmsg.packet,
+                                ).packed
+                            )
+                            tosend.append(zmsg)
                         except zmq.Again:
                             break
                 elif sk == tcpfd:

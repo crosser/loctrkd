@@ -18,7 +18,12 @@ import zmq
 
 from . import common
 from .backlog import blinit, backlog
-from .zmsg import LocEvt
+from .gps303proto import (
+    GPS_POSITIONING,
+    WIFI_POSITIONING,
+    parse_message,
+)
+from .zmsg import Bcast, topic
 
 log = getLogger("gps303/wsgateway")
 htmlfile = None
@@ -157,7 +162,12 @@ class Client:
         return msgs
 
     def wants(self, imei):
-        log.debug("wants %s? set is %s on fd %d", imei, self.imeis, self.sock.fileno())
+        log.debug(
+            "wants %s? set is %s on fd %d",
+            imei,
+            self.imeis,
+            self.sock.fileno(),
+        )
         return True  # TODO: check subscriptions
 
     def send(self, message):
@@ -224,11 +234,11 @@ class Clients:
 def runserver(conf):
     global htmlfile
 
-    blinit(conf.get("storage", "dbfn"), conf.get("opencellid", "dbfn"))
+    blinit(conf.get("storage", "dbfn"))
     htmlfile = conf.get("wsgateway", "htmlfile")
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
-    zsub.connect(conf.get("lookaside", "publishurl"))
+    zsub.connect(conf.get("collector", "publishurl"))
     tcpl = socket(AF_INET6, SOCK_STREAM)
     tcpl.setblocking(False)
     tcpl.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -245,9 +255,23 @@ def runserver(conf):
         while True:
             neededsubs = clients.subs()
             for imei in neededsubs - activesubs:
-                zsub.setsockopt(zmq.SUBSCRIBE, imei.encode())
+                zsub.setsockopt(
+                    zmq.SUBSCRIBE,
+                    topic(GPS_POSITIONING.PROTO, True),
+                )
+                zsub.setsockopt(
+                    zmq.SUBSCRIBE,
+                    topic(WIFI_POSITIONING.PROTO, False),
+                )
             for imei in activesubs - neededsubs:
-                zsub.setsockopt(zmq.UNSUBSCRIBE, imei.encode())
+                zsub.setsockopt(
+                    zmq.UNSUBSCRIBE,
+                    topic(GPS_POSITIONING.PROTO, True),
+                )
+                zsub.setsockopt(
+                    zmq.UNSUBSCRIBE,
+                    topic(WIFI_POSITIONING.PROTO, False),
+                )
             activesubs = neededsubs
             log.debug("Subscribed to: %s", activesubs)
             tosend = []
@@ -259,8 +283,10 @@ def runserver(conf):
                 if sk is zsub:
                     while True:
                         try:
-                            zmsg = LocEvt(zsub.recv(zmq.NOBLOCK))
+                            zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
+                            msg = parse_message(zmsg.packet)
                             tosend.append(zmsg)
+                            log.debug("Got %s", zmsg)
                         except zmq.Again:
                             break
                 elif sk == tcpfd:
