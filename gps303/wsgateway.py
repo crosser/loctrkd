@@ -1,6 +1,7 @@
 """ Websocket Gateway """
 
-from json import loads
+from datetime import datetime, timezone
+from json import dumps, loads
 from logging import getLogger
 from socket import socket, AF_INET6, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from time import time
@@ -171,8 +172,8 @@ class Client:
         return True  # TODO: check subscriptions
 
     def send(self, message):
-        if self.ready and message.imei in self.imeis:
-            self.ws_data += self.ws.send(Message(data=message.json))
+        if self.ready and message["imei"] in self.imeis:
+            self.ws_data += self.ws.send(Message(data=dumps(message)))
 
     def write(self):
         if self.ws_data:
@@ -212,7 +213,7 @@ class Clients:
     def send(self, msg):
         towrite = set()
         for fd, clnt in self.by_fd.items():
-            if clnt.wants(msg.imei):
+            if clnt.wants(msg["imei"]):
                 clnt.send(msg)
                 towrite.add(fd)
         return towrite
@@ -255,7 +256,6 @@ def runserver(conf):
         while True:
             neededsubs = clients.subs()
             for imei in neededsubs - activesubs:
-                log.debug("topics: %s", [tpc.hex() for tpc in [topic(GPS_POSITIONING.PROTO, True, imei), topic(WIFI_POSITIONING.PROTO, False, imei)]])
                 zsub.setsockopt(
                     zmq.SUBSCRIBE,
                     topic(GPS_POSITIONING.PROTO, True, imei),
@@ -284,13 +284,31 @@ def runserver(conf):
                 if sk is zsub:
                     while True:
                         try:
-                            buf = zsub.recv(zmq.NOBLOCK)
-                            zmsg = Bcast(buf)
-                            log.debug("zmq packet: %s", buf.hex())
-                            # zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
-                            msg = parse_message(zmsg.packet)
-                            tosend.append(zmsg)
-                            log.debug("Got %s", zmsg)
+                            zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
+                            msg = parse_message(zmsg.packet, zmsg.is_incoming)
+                            log.debug("Got %s with %s", zmsg, msg)
+                            if isinstance(msg, GPS_POSITIONING):
+                                tosend.append(
+                                    {
+                                        "imei": zmsg.imei,
+                                        "timestamp": str(msg.devtime),
+                                        "longitude": msg.longitude,
+                                        "latitude": msg.latitude,
+                                    }
+                                )
+                            elif isinstance(msg, WIFI_POSITIONING):
+                                tosend.append(
+                                    {
+                                        "imei": zmsg.imei,
+                                        "timestamp": str(
+                                            datetime.fromtimestamp(
+                                                zmsg.when
+                                            ).astimezone(tz=timezone.utc)
+                                        ),
+                                        "longitude": msg.longitude,
+                                        "latitude": msg.latitude,
+                                    }
+                                )
                         except zmq.Again:
                             break
                 elif sk == tcpfd:

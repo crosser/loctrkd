@@ -91,7 +91,7 @@
 			locations.shift();
 		}
 		console.log("new marker list " + JSON.stringify(locations));
-		tstamp.innerHTML = msg.devtime;
+		tstamp.innerHTML = msg.timestamp;
 		var lonLat;
 		// TODO: figure how to have multiple markers and/or track
 		for (const loc of locations) {
