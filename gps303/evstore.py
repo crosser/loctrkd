@@ -53,16 +53,21 @@ def stow(**kwargs):
     DB.commit()
 
 
-def fetch(imei, protos, backlog):
+def fetch(imei, matchlist, backlog):
+    # matchlist is a list of tuples (is_incoming, proto)
+    # returns a list of tuples (is_incoming, timestamp, packet)
     assert DB is not None
-    protosel = ", ".join(["?" for _ in range(len(protos))])
+    selector = " or ".join(
+        (f"(is_incoming = ? and proto = ?)" for _ in range(len(matchlist)))
+    )
     cur = DB.cursor()
     cur.execute(
-        f"""select packet from events
-                    where proto in ({protosel}) and imei = ?
+        f"""select is_incoming, tstamp, packet from events
+                    where ({selector}) and imei = ?
                     order by tstamp desc limit ?""",
-        protos + (imei, backlog),
+        tuple(item for sublist in matchlist for item in sublist)
+        + (imei, backlog),
     )
-    result = [row[0] for row in cur]
+    result = list(cur)
     cur.close()
-    return result
+    return list(reversed(result))

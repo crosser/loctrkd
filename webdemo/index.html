@@ -156,7 +156,7 @@
 			imei: Array.from(imeis),
 			type: "subscribe",
 			date: Date.now(),
-			backlog: 1
+			backlog: maxmarkers
 		};
 		console.log("sending" + JSON.stringify(msg));
 		ws.send(JSON.stringify(msg));

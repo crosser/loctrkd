@@ -18,7 +18,7 @@ from wsproto.utilities import RemoteProtocolError
 import zmq
 
 from . import common
-from .backlog import blinit, backlog
+from .evstore import initdb, fetch
 from .gps303proto import (
     GPS_POSITIONING,
     WIFI_POSITIONING,
@@ -28,6 +28,29 @@ from .zmsg import Bcast, topic
 
 log = getLogger("gps303/wsgateway")
 htmlfile = None
+
+
+def backlog(imei, numback):
+    result = []
+    for is_incoming, timestamp, packet in fetch(
+        imei,
+        ((True, GPS_POSITIONING.PROTO), (False, WIFI_POSITIONING.PROTO)),
+        numback,
+    ):
+        msg = parse_message(packet, is_incoming=is_incoming)
+        result.append(
+            {
+                "imei": imei,
+                "timestamp": str(
+                    datetime.fromtimestamp(timestamp).astimezone(
+                        tz=timezone.utc
+                    )
+                ),
+                "longitude": msg.longitude,
+                "latitude": msg.latitude,
+            }
+        )
+    return result
 
 
 def try_http(data, fd, e):
@@ -235,7 +258,7 @@ class Clients:
 def runserver(conf):
     global htmlfile
 
-    blinit(conf.get("storage", "dbfn"))
+    initdb(conf.get("storage", "dbfn"))
     htmlfile = conf.get("wsgateway", "htmlfile")
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
@@ -314,10 +337,10 @@ def runserver(conf):
                         for msg in received:
                             log.debug("Received from %d: %s", sk, msg)
                             if msg.get("type", None) == "subscribe":
-                                imei = msg.get("imei")
+                                imeis = msg.get("imei")
                                 numback = msg.get("backlog", 5)
-                                for elem in imei:
-                                    tosend.extend(backlog(elem, numback))
+                                for imei in imeis:
+                                    tosend.extend(backlog(imei, numback))
                         towrite.add(sk)
                 elif fl & zmq.POLLOUT:
                     log.debug("Write now open for fd %d", sk)
