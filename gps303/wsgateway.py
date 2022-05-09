@@ -170,7 +170,6 @@ class Client:
                     log.debug("%s on fd %d", event, self.sock.fileno())
                     self.ws_data += self.ws.send(event.response())
                 elif isinstance(event, TextMessage):
-                    # TODO: save imei "subscription"
                     log.debug("%s on fd %d", event, self.sock.fileno())
                     msg = loads(event.data)
                     msgs.append(msg)
@@ -192,7 +191,7 @@ class Client:
             self.imeis,
             self.sock.fileno(),
         )
-        return True  # TODO: check subscriptions
+        return imei in self.imeis
 
     def send(self, message):
         if self.ready and message["imei"] in self.imeis:
