@@ -7,10 +7,24 @@ from .opencellid import qry_cell
 
 db = connect(sys.argv[1])
 c = db.cursor()
-c.execute("select tstamp, packet from events where proto in ({})"
-        .format(", ".join([str(n) for n in (WIFI_POSITIONING.PROTO, WIFI_OFFLINE_POSITIONING.PROTO, GPS_POSITIONING.PROTO, GPS_OFFLINE_POSITIONING.PROTO)])))
+c.execute(
+    "select tstamp, packet from events where proto in ({})".format(
+        ", ".join(
+            [
+                str(n)
+                for n in (
+                    WIFI_POSITIONING.PROTO,
+                    WIFI_OFFLINE_POSITIONING.PROTO,
+                    GPS_POSITIONING.PROTO,
+                    GPS_OFFLINE_POSITIONING.PROTO,
+                )
+            ]
+        )
+    )
+)
 
-print("""<?xml version="1.0"?>
+print(
+    """<?xml version="1.0"?>
 <gpx version="1.1"
 creator="gps303"
 xmlns="http://www.topografix.com/GPX/1/1">
@@ -18,7 +32,8 @@ xmlns="http://www.topografix.com/GPX/1/1">
   <trk>
     <name>Location Data</name>
     <trkseg>
-""")
+"""
+)
 
 for tstamp, packet in c:
     msg = parse_message(packet)
@@ -30,11 +45,15 @@ for tstamp, packet in c:
         lat, lon = msg.latitude, msg.longitude
     else:
         continue
-    isotime = datetime.fromtimestamp(tstamp).astimezone(tz=timezone.utc).isoformat()
-    isotime = isotime[:isotime.rfind(".")] + "Z"
+    isotime = (
+        datetime.fromtimestamp(tstamp).astimezone(tz=timezone.utc).isoformat()
+    )
+    isotime = isotime[: isotime.rfind(".")] + "Z"
     trkpt = """      <trkpt lat="{}" lon="{}">
           <time>{}</time>
-      </trkpt>""".format(lat, lon, isotime)
+      </trkpt>""".format(
+        lat, lon, isotime
+    )
     print(trkpt)
     if False:
         print(
@@ -43,6 +62,8 @@ for tstamp, packet in c:
             .isoformat(),
             msg,
         )
-print("""    </trkseg>
+print(
+    """    </trkseg>
   </trk>
-</gpx>""")
+</gpx>"""
+)

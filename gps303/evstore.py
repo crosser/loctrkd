@@ -20,8 +20,10 @@ def initdb(dbname):
     global DB
     DB = connect(dbname)
     try:
-        DB.execute("""alter table events add column
-                is_incoming int not null default TRUE""")
+        DB.execute(
+            """alter table events add column
+                is_incoming int not null default TRUE"""
+        )
     except OperationalError:
         DB.execute(SCHEMA)
 
@@ -50,14 +52,17 @@ def stow(**kwargs):
     )
     DB.commit()
 
+
 def fetch(imei, protos, backlog):
     assert DB is not None
     protosel = ", ".join(["?" for _ in range(len(protos))])
     cur = DB.cursor()
-    cur.execute(f"""select packet from events
+    cur.execute(
+        f"""select packet from events
                     where proto in ({protosel}) and imei = ?
                     order by tstamp desc limit ?""",
-                protos + (imei, backlog))
+        protos + (imei, backlog),
+    )
     result = [row[0] for row in cur]
     cur.close()
     return result

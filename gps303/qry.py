@@ -16,19 +16,24 @@ else:
     selector = ""
 
 c.execute(
-    "select tstamp, imei, peeraddr, proto, packet from events" +
-    selector, {"proto": proto}
+    "select tstamp, imei, peeraddr, proto, packet from events" + selector,
+    {"proto": proto},
 )
 
 for tstamp, imei, peeraddr, proto, packet in c:
-    if len(packet) >  packet[0] + 1:
-        print("proto", packet[1] , "datalen", len(packet),
-                "msg.length", packet[0], file=sys.stderr)
+    if len(packet) > packet[0] + 1:
+        print(
+            "proto",
+            packet[1],
+            "datalen",
+            len(packet),
+            "msg.length",
+            packet[0],
+            file=sys.stderr,
+        )
     msg = parse_message(packet)
     print(
-        datetime.fromtimestamp(tstamp)
-        .astimezone(tz=timezone.utc)
-        .isoformat(),
+        datetime.fromtimestamp(tstamp).astimezone(tz=timezone.utc).isoformat(),
         imei,
         peeraddr,
         msg,
