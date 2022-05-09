@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from getopt import getopt
 from logging import getLogger
 from sys import argv
+from time import time
 import zmq
 
 from . import common
@@ -19,7 +20,9 @@ def main(conf, opts, args):
     zpush.connect(conf.get("collector", "listenurl"))
 
     if len(args) < 2:
-        raise ValueError("Too few args, need IMEI and command min: " + str(args))
+        raise ValueError(
+            "Too few args, need IMEI and command min: " + str(args)
+        )
     imei = args[0]
     cmd = args[1]
     args = args[2:]
@@ -30,7 +33,7 @@ def main(conf, opts, args):
     for arg in args:
         k, v = arg.split("=")
         kwargs[k] = v
-    resp = Resp(imei=imei, packet=cls.Out(**kwargs).packed)
+    resp = Resp(imei=imei, when=time(), packet=cls.Out(**kwargs).packed)
     log.debug("Response: %s", resp)
     zpush.send(resp.packed)
 

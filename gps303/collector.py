@@ -171,6 +171,7 @@ def runserver(conf):
                                 Bcast(
                                     is_incoming=False,
                                     proto=proto_of_message(zmsg.packet),
+                                    when=zmsg.when,
                                     imei=zmsg.imei,
                                     packet=zmsg.packet,
                                 ).packed
@@ -210,7 +211,7 @@ def runserver(conf):
                             respmsg = inline_response(packet)
                             if respmsg is not None:
                                 clients.response(
-                                    Resp(imei=imei, packet=respmsg)
+                                    Resp(imei=imei, when=when, packet=respmsg)
                                 )
                 else:
                     log.debug("Stray event: %s on socket %s", fl, sk)

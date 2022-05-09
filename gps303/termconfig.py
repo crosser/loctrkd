@@ -63,7 +63,9 @@ def runserver(conf):
                 ):
                     if key in termconfig:
                         kwargs[key] = termconfig[key]
-            resp = Resp(imei=zmsg.imei, packet=msg.Out(**kwargs).packed)
+            resp = Resp(
+                imei=zmsg.imei, when=zmsg.when, packet=msg.Out(**kwargs).packed
+            )
             log.debug("Response: %s", resp)
             zpush.send(resp.packed)
 

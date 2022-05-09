@@ -130,12 +130,14 @@ class Resp(_Zmsg):
     @property
     def packed(self):
         return (
-            "0000000000000000" if self.imei is None else self.imei.encode()
-        ) + (
+            ("0000000000000000" if self.imei is None else self.imei.encode())
+            + (
                 b"\0\0\0\0\0\0\0\0"
                 if self.when is None
                 else pack("!d", self.when)
-            ) + self.packet
+            )
+            + self.packet
+        )
 
     def decode(self, buffer):
         self.imei = buffer[:16].decode()

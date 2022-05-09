@@ -39,6 +39,7 @@ def runserver(conf):
             )
             resp = Resp(
                 imei=zmsg.imei,
+                when=zmsg.when,  # not the current time, but the original!
                 packet=msg.Out(latitude=lat, longitude=lon).packed,
             )
             log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
