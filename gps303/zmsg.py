@@ -80,8 +80,8 @@ class _Zmsg:
 
 
 def topic(proto, is_incoming=True, imei=None):
-    return (
-        pack("BB", is_incoming, proto) + b"" if imei is None else imei.encode()
+    return pack("BB", is_incoming, proto) + (
+        b"" if imei is None else pack("16s", imei.encode())
     )
 
 
@@ -100,8 +100,14 @@ class Bcast(_Zmsg):
     @property
     def packed(self):
         return (
-            pack("BB", int(self.is_incoming), self.proto)
-            + ("0000000000000000" if self.imei is None else self.imei).encode()
+            pack(
+                "BB16s",
+                int(self.is_incoming),
+                self.proto,
+                "0000000000000000"
+                if self.imei is None
+                else self.imei.encode(),
+            )
             + (
                 b"\0\0\0\0\0\0\0\0"
                 if self.when is None
@@ -130,7 +136,12 @@ class Resp(_Zmsg):
     @property
     def packed(self):
         return (
-            ("0000000000000000" if self.imei is None else self.imei.encode())
+            pack(
+                "16s",
+                "0000000000000000"
+                if self.imei is None
+                else self.imei.encode(),
+            )
             + (
                 b"\0\0\0\0\0\0\0\0"
                 if self.when is None

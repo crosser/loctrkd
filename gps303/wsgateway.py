@@ -255,22 +255,23 @@ def runserver(conf):
         while True:
             neededsubs = clients.subs()
             for imei in neededsubs - activesubs:
+                log.debug("topics: %s", [tpc.hex() for tpc in [topic(GPS_POSITIONING.PROTO, True, imei), topic(WIFI_POSITIONING.PROTO, False, imei)]])
                 zsub.setsockopt(
                     zmq.SUBSCRIBE,
-                    topic(GPS_POSITIONING.PROTO, True),
+                    topic(GPS_POSITIONING.PROTO, True, imei),
                 )
                 zsub.setsockopt(
                     zmq.SUBSCRIBE,
-                    topic(WIFI_POSITIONING.PROTO, False),
+                    topic(WIFI_POSITIONING.PROTO, False, imei),
                 )
             for imei in activesubs - neededsubs:
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
-                    topic(GPS_POSITIONING.PROTO, True),
+                    topic(GPS_POSITIONING.PROTO, True, imei),
                 )
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
-                    topic(WIFI_POSITIONING.PROTO, False),
+                    topic(WIFI_POSITIONING.PROTO, False, imei),
                 )
             activesubs = neededsubs
             log.debug("Subscribed to: %s", activesubs)
@@ -283,7 +284,10 @@ def runserver(conf):
                 if sk is zsub:
                     while True:
                         try:
-                            zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
+                            buf = zsub.recv(zmq.NOBLOCK)
+                            zmsg = Bcast(buf)
+                            log.debug("zmq packet: %s", buf.hex())
+                            # zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
                             msg = parse_message(zmsg.packet)
                             tosend.append(zmsg)
                             log.debug("Got %s", zmsg)

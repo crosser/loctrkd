@@ -18,8 +18,7 @@ def runserver(conf):
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
-    tosub = topic(WIFI_POSITIONING.PROTO)
-    zsub.setsockopt(zmq.SUBSCRIBE, tosub)
+    zsub.setsockopt(zmq.SUBSCRIBE, topic(WIFI_POSITIONING.PROTO))
     zpush = zctx.socket(zmq.PUSH)
     zpush.connect(conf.get("collector", "listenurl"))
 

@@ -17,13 +17,12 @@ def runserver(conf):
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
-    for protoname in (
-        "STATUS",
-        "SETUP",
-        "POSITION_UPLOAD_INTERVAL",
+    for proto in (
+        STATUS.PROTO,
+        SETUP.PROTO,
+        POSITION_UPLOAD_INTERVAL.PROTO,
     ):
-        tosub = topic(proto_by_name(protoname))
-        zsub.setsockopt(zmq.SUBSCRIBE, tosub)
+        zsub.setsockopt(zmq.SUBSCRIBE, topic(proto))
     zpush = zctx.socket(zmq.PUSH)
     zpush.connect(conf.get("collector", "listenurl"))
 
