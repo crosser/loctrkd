@@ -167,15 +167,6 @@ def runserver(conf):
                         try:
                             msg = zpull.recv(zmq.NOBLOCK)
                             zmsg = Resp(msg)
-                            zpub.send(
-                                Bcast(
-                                    is_incoming=False,
-                                    proto=proto_of_message(zmsg.packet),
-                                    when=zmsg.when,
-                                    imei=zmsg.imei,
-                                    packet=zmsg.packet,
-                                ).packed
-                            )
                             tosend.append(zmsg)
                         except zmq.Again:
                             break
@@ -210,7 +201,7 @@ def runserver(conf):
                                 tostop.append(sk)
                             respmsg = inline_response(packet)
                             if respmsg is not None:
-                                clients.response(
+                                tosend.append(
                                     Resp(imei=imei, when=when, packet=respmsg)
                                 )
                 else:
@@ -220,6 +211,15 @@ def runserver(conf):
                 poller.unregister(fd)
                 clients.stop(fd)
             for zmsg in tosend:
+                zpub.send(
+                    Bcast(
+                        is_incoming=False,
+                        proto=proto_of_message(zmsg.packet),
+                        when=zmsg.when,
+                        imei=zmsg.imei,
+                        packet=zmsg.packet,
+                    ).packed
+                )
                 log.debug("Sending to the client: %s", zmsg)
                 clients.response(zmsg)
             for clntsock, clntaddr in topoll:

@@ -287,28 +287,18 @@ def runserver(conf):
                             zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
                             msg = parse_message(zmsg.packet, zmsg.is_incoming)
                             log.debug("Got %s with %s", zmsg, msg)
-                            if isinstance(msg, GPS_POSITIONING):
-                                tosend.append(
-                                    {
-                                        "imei": zmsg.imei,
-                                        "timestamp": str(msg.devtime),
-                                        "longitude": msg.longitude,
-                                        "latitude": msg.latitude,
-                                    }
-                                )
-                            elif isinstance(msg, WIFI_POSITIONING):
-                                tosend.append(
-                                    {
-                                        "imei": zmsg.imei,
-                                        "timestamp": str(
-                                            datetime.fromtimestamp(
-                                                zmsg.when
-                                            ).astimezone(tz=timezone.utc)
-                                        ),
-                                        "longitude": msg.longitude,
-                                        "latitude": msg.latitude,
-                                    }
-                                )
+                            tosend.append(
+                                {
+                                    "imei": zmsg.imei,
+                                    "timestamp": str(
+                                        datetime.fromtimestamp(
+                                            zmsg.when
+                                        ).astimezone(tz=timezone.utc)
+                                    ),
+                                    "longitude": msg.longitude,
+                                    "latitude": msg.latitude,
+                                }
+                            )
                         except zmq.Again:
                             break
                 elif sk == tcpfd:

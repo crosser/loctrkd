@@ -297,7 +297,6 @@ class STATUS(GPS303Pkt):
 
 class HIBERNATION(GPS303Pkt):  # Server can send to send devicee to sleep
     PROTO = 0x14
-    RESPOND = Respond.INL
 
 
 class RESET(GPS303Pkt):
