@@ -69,7 +69,20 @@ class Client:
                 )
                 self.buffer = self.buffer[framestart:]
             # At this point, buffer starts with a packet
-            frameend = self.buffer.find(b"\r\n", 4)
+            if len(self.buffer) < 6:  # no len and proto - cannot proceed
+                break
+            exp_end = self.buffer[2] + 3  # Expect '\r\n' here
+            frameend = 0
+            # Length field can legitimeely be much less than the
+            # length of the packet (e.g. WiFi positioning), but
+            # it _should not_ be greater. Still sometimes it is.
+            # Luckily, not by too much: by maybe two or three bytes?
+            # Do this embarrassing hack to avoid accidental match
+            # of some binary data in the packet against '\r\n'.
+            while True:
+                frameend = self.buffer.find(b"\r\n", frameend)
+                if frameend >= (exp_end - 3):  # Found realistic match
+                    break
             if frameend == -1:  # Incomplete frame, return what we have
                 break
             packet = self.buffer[2:frameend]
