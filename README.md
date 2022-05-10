@@ -88,3 +88,9 @@ Example of a location message:
  "longitude": 17.465816,
  "latitude": 47.52013}
 ```
+
+## Homepage and source
+
+Home page is [http://www.average.org/gps303/](http://www.average.org/gps303/)
+Get the source from the [origin](git://git.average.org/gps303.git)
+or [Github mirror](https://github.com/crosser/gps303).
