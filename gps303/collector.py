@@ -189,9 +189,7 @@ def runserver(conf):
                 elif fl & zmq.POLLIN:
                     received = clients.recv(sk)
                     if received is None:
-                        log.debug(
-                            "Terminal gone from fd %d (IMEI %s)", sk, imei
-                        )
+                        log.debug("Terminal gone from fd %d", sk)
                         tostop.append(sk)
                     else:
                         for imei, when, peeraddr, packet in received:
