@@ -1,6 +1,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
 <head>
 <title>Location</title>
+<!-- This uses reeeally old 2.13.1 from 2013, also part of Debian distro -->
 <script src="http://www.openlayers.org/api/OpenLayers.js">
 </script>
 <script src="https://www.openstreetmap.org/openlayers/OpenStreetMap.js">
@@ -17,6 +18,11 @@
 	const imeis = new Set();
 	const locations = new Array();
 	const maxmarkers = 5;
+	const lineStyle = {
+		strokeColor: '#0000ff',
+		strokeOpacity: 0.5,
+		strokeWidth: 5
+	};
 
 	var sts;
 	var ws;
@@ -25,6 +31,7 @@
 	var subslist;
 	var tstamp;
 	var map;
+	var line;
 	var markers;
 	var icon;
 
@@ -70,6 +77,12 @@
 		layerCycleMap =
 		  new OpenLayers.Layer.OSM.CycleMap("CycleMap");
 		map.addLayer(layerCycleMap);
+		line =
+		  new OpenLayers.Layer.Vector("Line Layer");
+		map.addLayer(line);
+		map.addControl(new
+		  OpenLayers.Control.DrawFeature(line,
+				  OpenLayers.Handler.Path));
 		markers =
 		  new OpenLayers.Layer.Markers("Markers");
 		map.addLayer(markers);
@@ -92,16 +105,34 @@
 		}
 		console.log("new marker list " + JSON.stringify(locations));
 		tstamp.innerHTML = msg.timestamp;
-		var lonLat;
-		// TODO: figure how to have multiple markers and/or track
-		for (const loc of locations) {
-			lonLat = new OpenLayers.LonLat(+loc.longitude,
-					  +loc.latitude).transform(
-			    new OpenLayers.Projection("EPSG:4326"),
-			      map.getProjectionObject());
-			markers.addMarker(new OpenLayers.Marker(lonLat,icon));
+		// Draw a line between backlog locations
+		for (var i = 1; i < locations.length; i++) {
+			const p0 =
+			  new OpenLayers.Geometry.Point(
+				locations[i-1].longitude,
+				locations[i-1].latitude)
+                             .transform(new OpenLayers.Projection("EPSG:4326"),
+					     map.getProjectionObject());
+			const p1 =
+			  new OpenLayers.Geometry.Point(
+				locations[i].longitude,
+				locations[i].latitude)
+                             .transform(new OpenLayers.Projection("EPSG:4326"),
+					     map.getProjectionObject());
+			const leg =
+			  new OpenLayers.Geometry.LineString([p0, p1]);
+			const lineFeature =
+			  new OpenLayers.Feature.Vector(leg, null, lineStyle);
+			line.addFeatures([lineFeature]);
+
 		}
-		map.setCenter(lonLat, 16);
+		// Set marker at the reported (last) location
+		const lonLat = new OpenLayers.LonLat(+msg.longitude,
+				  +msg.latitude).transform(
+		    new OpenLayers.Projection("EPSG:4326"),
+		      map.getProjectionObject());
+		markers.addMarker(new OpenLayers.Marker(lonLat, icon));
+		map.setCenter(lonLat, 14);
 	}
 
 	function open_ws() {
