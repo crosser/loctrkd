@@ -1,3 +1,10 @@
+gps303 (0.91) experimental; urgency=low
+
+  [ Eugene Crosser ]
+  * fix log message using unknown variable
+
+ -- Eugene Crosser <crosser@average.org>  Tue, 10 May 2022 09:42:30 +0200
+
 gps303 (0.90) experimental; urgency=low
 
   [ Eugene Crosser ]
