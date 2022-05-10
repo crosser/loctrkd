@@ -1,6 +1,94 @@
+gps303 (0.90) experimental; urgency=low
+
+  [ Eugene Crosser ]
+  * Expand README
+  * clean a couple of TODOs in wsgateway
+  * make parse_message return UNKNOWN on parse crash
+  * reimplement backlog query again
+  * A hack in packet framing to false stop bytes match
+  * do not respond to hibernation; minor cleanup
+  * wsgateway with new message distribution model
+  * fix zmq subscription topics
+  * misc black reformatting
+  * fill in `when` in Resp packet
+  * WIP retoure messaging
+  * Partly revert "Broadcast location, gps and approximated"
+
+ -- Eugene Crosser <crosser@average.org>  Tue, 10 May 2022 09:09:08 +0200
+
 gps303 (0.01) experimental; urgency=low
 
   [ Eugene Crosser ]
-  * Initial release
+  * adjust debianization to wsgateway
+  * Update evstore schema to support in and out msgs
+  * WIP on supporting multiple markers
+  * WIP on baclog fetcher
+  * lookaside - do not look for offline positioning
+  * wsgateway aggregate subscriptions upstream
+  * support subscriptions on the client side
+  * wsgateway read html file every time
+  * Webdemo use its url as the base for ws url
+  * wsgateway properly handle write-busy websockets
+  * Make constructor of protocol objects more elegant
+  * mock use persistent history for enrered commands
+  * Show coordinates on the map
+  * WIP on ws gateway, it now works
+  * Make ws gateway act as http server too
+  * WIP on websocket gateway
+  * Try to make systemd target more robust
+  * lintian: override "unusual target"
+  * some cleanup of debianization
+  * set umask for group-writable unix domain sockets
+  * Change LocEvt to use json encoding
+  * remove local conf, add license
+  * Broadcast location, gps and approximated
+  * clean up `from_packet()`
+  * expand README
+  * update gitignore debianization
+  * debianize
+  * add command line script
+  * cleanup of gps303proto
+  * update mkgpx to the new api
+  * export all classes
+  * remove forgotten make_packet() call
+  * command line frontend accepts `key=value` args
+  * Accept various arg formats for `Out` construction
+  * Fix metaclass, now works
+  * WIP convert to In/Out nested classes
+  * zmsg: always pack IPv6 address (mapped for IPv4)
+  * Remove deprecated functions
+  * Don't make unneeded responses, better debug log
+  * introduce command-line forntend to send cmds
+  * make `response` class method again
+  * fix var name
+  * introduce `class_by_prefix()`
+  * add some more message types
+  * Use config from the config file to config
+  * Add some more commands
+  * Do not respond to "Manual positioning"
+  * remove obsolete __main__
+  * the whole shebang is working now
+  * change storage format - save the whole packet
+  * use old address format in the event database
+  * Support IPv6 on client socket
+  * full encoder/decoder for zmq messages
+  * implement `inline_response()`
+  * cleanup, make monolitic app work again
+  * initial storage service
+  * make collector.py work
+  * WIP to reorganise to microservices
+  * rename protocol module to "gps303proto"
+  * Initial version of zmq based architecture
+  * drop unresolvable points in mkgpx
+  * add lookaside module and opencellid lookup
+  * define more protocol units
+  * add README
+  * Work with cell location data; use opencellid
+  * A script to parse data from the database
+  * Use command line args and config more
+  * use correct config entry
+  * introduce config
+  * add necessary responses
+  * make object parser and sqlite store
 
- -- Eugene Crosser <crosser@average.org>  Wed, 27 Apr 2022 23:12:11 +0200
+ -- Eugene Crosser <crosser@average.org>  Sat, 7 May 2022 13:21:55 +0200
