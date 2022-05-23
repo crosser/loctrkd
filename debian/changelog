@@ -1,3 +1,15 @@
+gps303 (0.92) experimental; urgency=low
+
+  [ Eugene Crosser ]
+  * "When you start a pattern with *, you must use quotes."
+  * add github action
+  * allow imei as the document path
+  * Report status (with battery %) to the webpage
+  * Add references to the doc/source
+  * webdemo: draw very simplistic line between locs
+
+ -- Eugene Crosser <crosser@average.org>  Mon, 23 May 2022 23:55:46 +0200
+
 gps303 (0.91) experimental; urgency=low
 
   [ Eugene Crosser ]
