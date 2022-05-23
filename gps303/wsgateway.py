@@ -21,6 +21,7 @@ from . import common
 from .evstore import initdb, fetch
 from .gps303proto import (
     GPS_POSITIONING,
+    STATUS,
     WIFI_POSITIONING,
     parse_message,
 )
@@ -40,6 +41,7 @@ def backlog(imei, numback):
         msg = parse_message(packet, is_incoming=is_incoming)
         result.append(
             {
+                "type": "location",
                 "imei": imei,
                 "timestamp": str(
                     datetime.fromtimestamp(timestamp).astimezone(
@@ -48,6 +50,9 @@ def backlog(imei, numback):
                 ),
                 "longitude": msg.longitude,
                 "latitude": msg.latitude,
+                "accuracy": "gps"
+                if isinstance(msg, GPS_POSITIONING)
+                else "approximate",
             }
         )
     return result
@@ -68,19 +73,14 @@ def try_http(data, fd, e):
             fd,
             headers,
         )
-        try:
-            pos = resource.index("?")
-            resource = resource[:pos]
-        except ValueError:
-            pass
         if op == "GET":
             if htmlfile is None:
                 return (
                     f"{proto} 500 No data configured\r\n"
                     f"Content-Type: text/plain\r\n\r\n"
-                    f"HTML data not configure on the server\r\n".encode()
+                    f"HTML data not configured on the server\r\n".encode()
                 )
-            elif resource == "/":
+            else:
                 try:
                     with open(htmlfile, "rb") as fl:
                         htmldata = fl.read()
@@ -96,12 +96,6 @@ def try_http(data, fd, e):
                         f"Content-Type: text/plain\r\n\r\n"
                         f"HTML file could not be opened\r\n".encode()
                     )
-            else:
-                return (
-                    f"{proto} 404 File not found\r\n"
-                    f"Content-Type: text/plain\r\n\r\n"
-                    f'We can only serve "/"\r\n'.encode()
-                )
         else:
             return (
                 f"{proto} 400 Bad request\r\n"
@@ -286,6 +280,10 @@ def runserver(conf):
                     zmq.SUBSCRIBE,
                     topic(WIFI_POSITIONING.PROTO, False, imei),
                 )
+                zsub.setsockopt(
+                    zmq.SUBSCRIBE,
+                    topic(STATUS.PROTO, True, imei),
+                )
             for imei in activesubs - neededsubs:
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
@@ -294,6 +292,10 @@ def runserver(conf):
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
                     topic(WIFI_POSITIONING.PROTO, False, imei),
+                )
+                zsub.setsockopt(
+                    zmq.UNSUBSCRIBE,
+                    topic(STATUS.PROTO, True, imei),
                 )
             activesubs = neededsubs
             log.debug("Subscribed to: %s", activesubs)
@@ -309,18 +311,36 @@ def runserver(conf):
                             zmsg = Bcast(zsub.recv(zmq.NOBLOCK))
                             msg = parse_message(zmsg.packet, zmsg.is_incoming)
                             log.debug("Got %s with %s", zmsg, msg)
-                            tosend.append(
-                                {
-                                    "imei": zmsg.imei,
-                                    "timestamp": str(
-                                        datetime.fromtimestamp(
-                                            zmsg.when
-                                        ).astimezone(tz=timezone.utc)
-                                    ),
-                                    "longitude": msg.longitude,
-                                    "latitude": msg.latitude,
-                                }
-                            )
+                            if isinstance(msg, STATUS):
+                                tosend.append(
+                                    {
+                                        "type": "status",
+                                        "imei": zmsg.imei,
+                                        "timestamp": str(
+                                            datetime.fromtimestamp(
+                                                zmsg.when
+                                            ).astimezone(tz=timezone.utc)
+                                        ),
+                                        "battery": msg.batt,
+                                    }
+                                )
+                            else:
+                                tosend.append(
+                                    {
+                                        "type": "location",
+                                        "imei": zmsg.imei,
+                                        "timestamp": str(
+                                            datetime.fromtimestamp(
+                                                zmsg.when
+                                            ).astimezone(tz=timezone.utc)
+                                        ),
+                                        "longitude": msg.longitude,
+                                        "latitude": msg.latitude,
+                                        "accuracy": "gps"
+                                        if zmsg.is_incoming
+                                        else "approximate",
+                                    }
+                                )
                         except zmq.Again:
                             break
                 elif sk == tcpfd:
