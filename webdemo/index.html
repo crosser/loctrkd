@@ -10,10 +10,11 @@
 	const urlParams = new URLSearchParams(window.location.search);
 	const qimei = urlParams.get("imei");
 
-	const ourl = new URL(window.location);
-	const wsproto = ourl.protocol === "https" ? "wss" : "ws";
-	const wshost = ourl.hostname ? ourl.hostname : "localhost";
-	const wsport = ourl.port ? ourl.port : 5049;
+	const wsproto = window.location.protocol === "https" ? "wss" : "ws";
+	const wshost = window.location.hostname ? window.location.hostname
+						: "localhost";
+	const wsport = window.location.port ? window.location.port : 5049;
+	const limei = window.location.pathname.substring(1)
 
 	const imeis = new Set();
 	const locations = new Array();
@@ -47,6 +48,8 @@
 		tstamp = document.getElementById("tstamp");
 		if (qimei) {
 			imei.value = qimei;
+		} else if (limei) {
+			imei.value = limei;
 		}
 		open_ws();
 	}
