@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: crosser/build-dpkg
+      - uses: crosser/build-dpkg@HEAD
         id: build
         with:
           args: --unsigned-source --unsigned-changes
