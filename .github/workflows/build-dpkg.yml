@@ -10,12 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: crosser/build-dpkg@v2
+      - uses: crosser/build-dpkg
         id: build
         with:
           args: --unsigned-source --unsigned-changes
 
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.build.outputs.filename }}
-          path: ${{ steps.build.outputs.filename }}
+          path: ${{ github.workspace }}/${{ steps.build.outputs.filename }}
