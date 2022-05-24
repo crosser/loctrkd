@@ -1,3 +1,15 @@
+gps303 (0.93) experimental; urgency=medium
+
+  * use fixed github action
+  * try to make github actions work
+  * "the `uses' attribute must be a path, a Docker image, or owner/repo@ref"
+  * Update README
+  * actions: action-gh-release, not artifact upload
+  * Beautify logging
+  * Make a `make-release` script to run `gbp dch`
+
+ -- Eugene Crosser <crosser@average.org>  Tue, 24 May 2022 22:53:13 +0200
+
 gps303 (0.92) experimental; urgency=low
 
   [ Eugene Crosser ]
