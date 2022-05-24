@@ -2,13 +2,19 @@
 
 from configparser import ConfigParser
 from getopt import getopt
-from logging import getLogger, StreamHandler, DEBUG, INFO
+from logging import Formatter, getLogger, StreamHandler, DEBUG, INFO
 from logging.handlers import SysLogHandler
+from pkg_resources import get_distribution, DistributionNotFound
 from sys import argv, stderr, stdout
 
 CONF = "/etc/gps303.conf"
 PORT = 4303
 DBFN = "/var/lib/gps303/gps303.sqlite"
+
+try:
+    version = get_distribution("gps303").version
+except DistributionNotFound:
+    version = "<local>"
 
 
 def init(log, opts=None):
@@ -17,11 +23,19 @@ def init(log, opts=None):
     opts = dict(opts)
     conf = readconfig(opts["-c"] if "-c" in opts else CONF)
     if stdout.isatty():
-        log.addHandler(StreamHandler(stderr))
+        hdl = StreamHandler(stderr)
+        hdl.setFormatter(
+            Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
+        log.addHandler(hdl)
     else:
-        log.addHandler(SysLogHandler(address="/dev/log"))
+        hdl = SysLogHandler(address="/dev/log")
+        hdl.setFormatter(
+            Formatter("%(name)s[%(process)d]: %(levelname)s - %(message)s")
+        )
+        log.addHandler(hdl)
     log.setLevel(DEBUG if "-d" in opts else INFO)
-    log.info("starting with options: %s", opts)
+    log.info("%s starting with options: %s", version, opts)
     return conf
 
 
