@@ -1,0 +1,25 @@
+#!/bin/sh
+
+export DEBFULLNAME="`git config --get user.name`"
+export DEBEMAIL="`git config --get user.email`"
+
+BRANCH=`git rev-parse --abbrev-ref HEAD`
+FLAVOR="`dpkg-parsechangelog --show-field Distribution`"
+LASTVER=`dpkg-parsechangelog --show-field Version`
+NEWVER=$1
+if [ -z "$NEWVER" ]; then
+	echo "Specify the new version tag (old is $LASTVER)" >&2
+	exit 1
+fi
+
+echo "new version $NEWVER, changes from $LASTVER on branch $BRANCH"
+
+gbp dch -s "$BRANCH" -D "$FLAVOR" -N "$NEWVER" -c --debian-branch="$BRANCH" --since="$LASTVER"
+if [ $? -ne 0 ]; then
+	echo "Automatic update of debian/changelog failed"
+	exit 1
+fi
+git tag "$NEWVER"
+
+echo "debian/changelog has been modified. Verify before \"git push\"!"
+echo "Don't forget to check / push tags"
