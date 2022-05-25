@@ -1,0 +1,12 @@
+[Unit]
+Description=GPS303 OpenCellID Download Service
+Wants=gps303.ocid-dload.timer
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/gps303
+ExecStart=python3 -m gps303.ocid_dload $OPTIONS
+StandardOutput=journal
+StandardError=inherit
+User=gps303
+Group=gps303

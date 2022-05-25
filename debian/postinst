@@ -2,6 +2,7 @@
 
 set -e
 adduser --system --group --home /var/lib/gps303 gps303
+install --owner gps303 --group gps303 --directory /var/lib/opencellid
 
 #DEBHELPER#
 
