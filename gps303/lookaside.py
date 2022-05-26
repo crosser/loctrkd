@@ -15,6 +15,10 @@ log = getLogger("gps303/lookaside")
 
 
 def runserver(conf):
+    if conf.get("lookaside", "backend") != "opencellid":
+        raise NotImplementedError(
+            "Lookaside only implements opencellid backend"
+        )
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
