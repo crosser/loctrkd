@@ -38,7 +38,7 @@ class Client:
         """Read from the socket and parse complete messages"""
         try:
             segment = self.sock.recv(4096)
-        except OSError:
+        except OSError as e:
             log.warning(
                 "Reading from fd %d (IMEI %s): %s",
                 self.sock.fileno(),
