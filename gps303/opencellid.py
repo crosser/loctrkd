@@ -14,7 +14,7 @@ def init(conf):
     ldb = connect(conf["opencellid"]["dbfn"])
 
 
-def lookup(mcc, gsm_cells, _):
+def lookup(mcc, mnc, gsm_cells, __):
     lc = ldb.cursor()
     lc.execute("""attach database ":memory:" as mem""")
     lc.execute("create table mem.seen (locac int, cellid int, signal int)")
@@ -60,7 +60,7 @@ if __name__.endswith("__main__"):
     init({"opencellid": {"dbfn": sys.argv[2]}})
     for timestamp, packet in c:
         obj = parse_message(packet)
-        avlat, avlon = lookup(obj.mcc, obj.gsm_cells, obj.wifi_aps)
+        avlat, avlon = lookup(obj.mcc, obj.mnc, obj.gsm_cells, obj.wifi_aps)
         print(
             "{} {:+#010.8g},{:+#010.8g}".format(
                 datetime.fromtimestamp(timestamp), avlat, avlon

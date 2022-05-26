@@ -39,7 +39,7 @@ xmlns="http://www.topografix.com/GPX/1/1">
 for tstamp, packet in c:
     msg = parse_message(packet)
     if isinstance(msg, (WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING)):
-        lat, lon = ocid.lookup(msg.mcc, msg.gsm_cells, msg.wifi_aps)
+        lat, lon = ocid.lookup(msg.mcc, msg.mnc, msg.gsm_cells, msg.wifi_aps)
         if lat is None or lon is None:
             continue
     elif isinstance(msg, (GPS_POSITIONING, GPS_OFFLINE_POSITIONING)):

@@ -15,12 +15,7 @@ log = getLogger("gps303/lookaside")
 
 
 def runserver(conf):
-    if conf.get("lookaside", "backend") == "opencellid":
-        qry = import_module(".opencellid", __package__)
-    else:
-        raise NotImplementedError(
-            "Lookaside only implements opencellid backend"
-        )
+    qry = import_module("." + conf.get("lookaside", "backend"), __package__)
     qry.init(conf)
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
@@ -40,14 +35,17 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            lat, lon = qry.lookup(msg.mcc, msg.gsm_cells, msg.wifi_aps)
-            resp = Resp(
-                imei=zmsg.imei,
-                when=zmsg.when,  # not the current time, but the original!
-                packet=msg.Out(latitude=lat, longitude=lon).packed,
-            )
-            log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
-            zpush.send(resp.packed)
+            try:
+                lat, lon = qry.lookup(msg.mcc, msg.mnc, msg.gsm_cells, msg.wifi_aps)
+                resp = Resp(
+                    imei=zmsg.imei,
+                    when=zmsg.when,  # not the current time, but the original!
+                    packet=msg.Out(latitude=lat, longitude=lon).packed,
+                )
+                log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
+                zpush.send(resp.packed)
+            except Exception as e:
+                log.warning("Lookup for %s resulted in %s", msg, e)
 
     except KeyboardInterrupt:
         pass
