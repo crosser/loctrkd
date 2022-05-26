@@ -1,3 +1,4 @@
+from configparser import NoOptionError
 import csv
 from logging import getLogger
 import requests
@@ -10,7 +11,7 @@ log = getLogger("gps303/ocid_dload")
 
 RURL = (
     "https://opencellid.org/ocid/downloads"
-    "?token={token}&type={type}&file={mcc}.csv.gz"
+    "?token={token}&type={dltype}&file={fname}.csv.gz"
 )
 
 SCHEMA = """create table if not exists cells (
@@ -79,17 +80,27 @@ class unzipped:
 
 def main(conf):
     try:
-        with open(
-            conf.get("opencellid", "downloadtoken"), encoding="ascii"
-        ) as fl:
-            token = fl.read().strip()
-    except FileNotFoundError:
-        log.warning("Opencellid access token not configured, cannot download")
-        return
-
-    mcc = conf.get("opencellid", "downloadmcc")
-    url = RURL.format(token=token, type="mcc", mcc=mcc)
-    # url = "http://localhost:8000/262.csv.gz"  # TESTING
+        url = conf.get("opencellid", "downloadurl")
+        mcc = "<unspecified>"
+    except NoOptionError:
+        try:
+            with open(
+                conf.get("opencellid", "downloadtoken"), encoding="ascii"
+            ) as fl:
+                token = fl.read().strip()
+        except FileNotFoundError:
+            log.warning(
+                "Opencellid access token not configured, cannot download"
+            )
+            return
+        mcc = conf.get("opencellid", "downloadmcc")
+        if mcc == "full":
+            dltype = "full"
+            fname = "cell_towers"
+        else:
+            dltype = "mcc"
+            fname = mcc
+        url = RURL.format(token=token, dltype="mcc", fname=mcc)
     dbfn = conf.get("opencellid", "dbfn")
     count = 0
     with requests.get(url, stream=True) as resp, connect(dbfn) as db:
@@ -108,8 +119,15 @@ def main(conf):
                 row,
             )
             count += 1
-        db.execute(DBINDEX)
-    log.info("repopulated %s with %d records for MCC %s", dbfn, count, mcc)
+        if count < 1:
+            db.rollback()
+            log.warning("Did not get any data for MCC %s, rollback", mcc)
+        else:
+            db.execute(DBINDEX)
+            db.commit()
+            log.info(
+                "repopulated %s with %d records for MCC %s", dbfn, count, mcc
+            )
 
 
 if __name__.endswith("__main__"):
