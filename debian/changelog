@@ -1,3 +1,9 @@
+gps303 (0.95) experimental; urgency=medium
+
+  * Quick fix for a missing variable
+
+ -- Eugene Crosser <crosser@average.org>  Thu, 26 May 2022 19:32:44 +0200
+
 gps303 (0.94) experimental; urgency=medium
 
   * Opencellid download service
