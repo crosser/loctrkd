@@ -1,3 +1,13 @@
+gps303 (0.94) experimental; urgency=medium
+
+  * Opencellid download service
+  * Improve error handling of the downloader
+  * cleanup and document config file a bit
+  * Prepare to have dynamically chosen lookup backend
+  * Add googlemaps lookaside backend
+
+ -- Eugene Crosser <crosser@average.org>  Thu, 26 May 2022 19:25:40 +0200
+
 gps303 (0.93) experimental; urgency=medium
 
   * use fixed github action
