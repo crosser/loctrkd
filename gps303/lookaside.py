@@ -1,6 +1,7 @@
 """ Estimate coordinates from WIFI_POSITIONING and send back """
 
 from datetime import datetime, timezone
+from importlib import import_module
 from logging import getLogger
 from os import umask
 from struct import pack
@@ -8,17 +9,19 @@ import zmq
 
 from . import common
 from .gps303proto import parse_message, WIFI_POSITIONING
-from .opencellid import qry_cell
 from .zmsg import Bcast, Resp, topic
 
 log = getLogger("gps303/lookaside")
 
 
 def runserver(conf):
-    if conf.get("lookaside", "backend") != "opencellid":
+    if conf.get("lookaside", "backend") == "opencellid":
+        qry = import_module(".opencellid", __package__)
+    else:
         raise NotImplementedError(
             "Lookaside only implements opencellid backend"
         )
+    qry.init(conf)
     zctx = zmq.Context()
     zsub = zctx.socket(zmq.SUB)
     zsub.connect(conf.get("collector", "publishurl"))
@@ -37,9 +40,7 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            lat, lon = qry_cell(
-                conf["opencellid"]["dbfn"], msg.mcc, msg.gsm_cells
-            )
+            lat, lon = qry.lookup(msg.mcc, msg.gsm_cells, msg.wifi_aps)
             resp = Resp(
                 imei=zmsg.imei,
                 when=zmsg.when,  # not the current time, but the original!

@@ -3,8 +3,9 @@ from sqlite3 import connect
 import sys
 
 from .gps303proto import *
-from .opencellid import qry_cell
+from . import opencellid as ocid
 
+ocid.init({"opencellid": {"dbfn": sys.argv[2]}})
 db = connect(sys.argv[1])
 c = db.cursor()
 c.execute(
@@ -38,7 +39,7 @@ xmlns="http://www.topografix.com/GPX/1/1">
 for tstamp, packet in c:
     msg = parse_message(packet)
     if isinstance(msg, (WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING)):
-        lat, lon = qry_cell(sys.argv[2], msg.mcc, msg.gsm_cells)
+        lat, lon = ocid.lookup(msg.mcc, msg.gsm_cells, msg.wifi_aps)
         if lat is None or lon is None:
             continue
     elif isinstance(msg, (GPS_POSITIONING, GPS_OFFLINE_POSITIONING)):
