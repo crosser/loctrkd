@@ -22,20 +22,21 @@ def init(log, opts=None):
         opts, _ = getopt(argv[1:], "c:d")
     opts = dict(opts)
     conf = readconfig(opts["-c"] if "-c" in opts else CONF)
+    log.setLevel(DEBUG if "-d" in opts else INFO)
     if stdout.isatty():
         hdl = StreamHandler(stderr)
         hdl.setFormatter(
             Formatter("%(asctime)s - %(levelname)s - %(message)s")
         )
         log.addHandler(hdl)
+        log.debug("%s starting with options: %s", version, opts)
     else:
         hdl = SysLogHandler(address="/dev/log")
         hdl.setFormatter(
             Formatter("%(name)s[%(process)d]: %(levelname)s - %(message)s")
         )
         log.addHandler(hdl)
-    log.setLevel(DEBUG if "-d" in opts else INFO)
-    log.info("%s starting with options: %s", version, opts)
+        log.info("%s starting with options: %s", version, opts)
     return conf
 
 
