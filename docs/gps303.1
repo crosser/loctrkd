@@ -1,0 +1,59 @@
+.TH GPS303 1 2022-05-27 "GPS303 Manipulation Tool" "User Commands"
+
+.SH NAME
+
+gps303 \- utility to send control messages to the GPS tracker terminal
+
+.SH SYNOPSIS
+
+gps303 [-c /path/to/config/file] [-d]
+
+.SH DESCRIPTION
+
+Command line tool to send "unsolicited reply" messages to the tracker.
+There are messages to configure settings in the terminal, or to request
+actions, such as to start a monitoring call, or to power off.
+
+.SH OPTIONS
+
+.TP 0.5i
+.B -d
+Set "debug" level of logging
+
+.TP 0.5i
+.B -c /path/to/config
+Set "debug" level of logging (default /etc/gps303.conf)
+
+.SH COMMANDS
+
+After the options, IMEI (16 decimal characters) and the command verb
+must be specified, optionally followed by a list of
+.B key=value
+pairs. The command verb is a case insensitive abbreviation that
+uniquely identifies a class from the file gps303/gps303proto.py.
+These classes correspond to message types recognized by the terminal.
+Only a few of them are useful to construct "unsolicited replies".
+.B key=value
+pairs must specify kwargs for the constructor of the "Out" subclass
+of the class.
+
+.SH KNOWN BUGS
+
+The command sends the message to the "collector" daemon for sending
+to the terminal. There is no guarantee that the terminal is online
+at the moment of execution, and there is no feedback. The only way
+to verify that the command was successfully sent is to check the log
+of the collector.
+
+.SH COPYRIGHT
+
+The program is copyrighted by Eugene G. Crosser <crosser@average.org>
+and freely distributable under the terms of MIT license.
+
+.SH CREDITS
+
+The program is inspired by the project petGPS by Thomas Obadia
+
+.SH SEE ALSO
+
+gps303.conf(7)
