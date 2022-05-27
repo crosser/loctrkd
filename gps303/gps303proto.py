@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from inspect import isclass
 from struct import error, pack, unpack
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 __all__ = (
     "class_by_prefix",
@@ -69,18 +69,19 @@ __all__ = (
 
 
 class DecodeError(Exception):
-    def __init__(self, e, **kwargs):
+    def __init__(self, e: Exception, **kwargs: Any) -> None:
         super().__init__(e)
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-def intx(x):
+
+def intx(x: Union[str, int]) -> int:
     if isinstance(x, str):
         x = int(x, 0)
     return x
 
 
-def hhmm(x):
+def hhmm(x: str) -> str:
     """Check for the string that represents hours and minutes"""
     if not isinstance(x, str) or len(x) != 4:
         raise ValueError(str(x) + " is not a four-character string")
@@ -91,21 +92,20 @@ def hhmm(x):
     return x
 
 
-def l3str(x):
+def l3str(x: Union[str, List[str]]) -> List[str]:
     if isinstance(x, str):
-        x = x.split(",")
-    if len(x) != 3 or not all(isinstance(el, str) for el in x):
-        raise ValueError(str(x) + " is not a list of three strings")
-    return x
+        lx = x.split(",")
+    if len(lx) != 3 or not all(isinstance(el, str) for el in x):
+        raise ValueError(str(lx) + " is not a list of three strings")
+    return lx
 
 
-def l3int(x):
+def l3int(x: Union[str, List[int]]) -> List[int]:
     if isinstance(x, str):
-        x = x.split(",")
-        x = [int(el) for el in x]
-    if len(x) != 3 or not all(isinstance(el, int) for el in x):
-        raise ValueError(str(x) + " is not a list of three integers")
-    return x
+        lx = [int(el) for el in x.split(",")]
+    if len(lx) != 3 or not all(isinstance(el, int) for el in lx):
+        raise ValueError(str(lx) + " is not a list of three integers")
+    return lx
 
 
 class MetaPkt(type):
@@ -120,27 +120,37 @@ class MetaPkt(type):
     respectively.
     """
 
-    def __new__(cls, name, bases, attrs):
+    def __new__(
+        cls, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]
+    ) -> "MetaPkt":
         newcls = super().__new__(cls, name, bases, attrs)
-        newcls.In = super().__new__(
-            cls,
-            name + ".In",
-            (newcls,) + bases,
-            {
-                "KWARGS": newcls.IN_KWARGS,
-                "decode": newcls.in_decode,
-                "encode": newcls.in_encode,
-            },
+        setattr(
+            newcls,
+            "In",
+            super().__new__(
+                cls,
+                name + ".In",
+                (newcls,) + bases,
+                {
+                    "KWARGS": newcls.IN_KWARGS,
+                    "decode": newcls.in_decode,
+                    "encode": newcls.in_encode,
+                },
+            ),
         )
-        newcls.Out = super().__new__(
-            cls,
-            name + ".Out",
-            (newcls,) + bases,
-            {
-                "KWARGS": newcls.OUT_KWARGS,
-                "decode": newcls.out_decode,
-                "encode": newcls.out_encode,
-            },
+        setattr(
+            newcls,
+            "Out",
+            super().__new__(
+                cls,
+                name + ".Out",
+                (newcls,) + bases,
+                {
+                    "KWARGS": newcls.OUT_KWARGS,
+                    "decode": newcls.out_decode,
+                    "encode": newcls.out_encode,
+                },
+            ),
         )
         return newcls
 
@@ -154,10 +164,13 @@ class Respond(Enum):
 class GPS303Pkt(metaclass=MetaPkt):
     RESPOND = Respond.NON  # Do not send anything back by default
     PROTO: int
-    IN_KWARGS: Tuple[Tuple[str, Callable, Any], ...] = ()
-    OUT_KWARGS: Tuple[Tuple[str, Callable, Any], ...] = ()
+    IN_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
+    OUT_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
+    KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
+    In: Type["GPS303Pkt"]
+    Out: Type["GPS303Pkt"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         """
         Construct the object _either_ from (length, payload),
         _or_ from the values of individual fields
@@ -177,7 +190,7 @@ class GPS303Pkt(metaclass=MetaPkt):
                     self.__class__.__name__ + " stray kwargs " + str(kwargs)
                 )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}({})".format(
             self.__class__.__name__,
             ", ".join(
@@ -192,26 +205,30 @@ class GPS303Pkt(metaclass=MetaPkt):
             ),
         )
 
-    def in_decode(self, length, packet):
+    decode: Callable[["GPS303Pkt", int, bytes], None]
+
+    def in_decode(self, length: int, packet: bytes) -> None:
         # Overridden in subclasses, otherwise do not decode payload
         return
 
-    def out_decode(self, length, packet):
+    def out_decode(self, length: int, packet: bytes) -> None:
         # Overridden in subclasses, otherwise do not decode payload
         return
 
-    def in_encode(self):
+    encode: Callable[["GPS303Pkt"], bytes]
+
+    def in_encode(self) -> bytes:
         # Necessary to emulate terminal, which is not implemented
         raise NotImplementedError(
             self.__class__.__name__ + ".encode() not implemented"
         )
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         # Overridden in subclasses, otherwise make empty payload
         return b""
 
     @property
-    def packed(self):
+    def packed(self) -> bytes:
         payload = self.encode()
         length = len(payload) + 1
         return pack("BB", length, self.PROTO) + payload
@@ -226,17 +243,16 @@ class LOGIN(GPS303Pkt):
     RESPOND = Respond.INL
     # Default response for ACK, can also respond with STOP_UPLOAD
 
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.imei = payload[:-1].hex()
         self.ver = unpack("B", payload[-1:])[0]
-        return self
 
 
 class SUPERVISION(GPS303Pkt):
     PROTO = 0x05
     OUT_KWARGS = (("status", int, 1),)
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         # 1: The device automatically answers Pickup effect
         # 2: Automatically Answering Two-way Calls
         # 3: Ring manually answer the two-way call
@@ -251,7 +267,7 @@ class HEARTBEAT(GPS303Pkt):
 class _GPS_POSITIONING(GPS303Pkt):
     RESPOND = Respond.INL
 
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.dtime = payload[:6]
         if self.dtime == b"\0\0\0\0\0\0":
             self.devtime = None
@@ -271,9 +287,8 @@ class _GPS_POSITIONING(GPS303Pkt):
         self.longitude = lon / (30000 * 60) * (-1 if flip_lon else 1)
         self.speed = speed
         self.flags = flags
-        return self
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         tup = datetime.utcnow().timetuple()
         ttup = (tup[0] % 100,) + tup[1:6]
         return pack("BBBBBB", *ttup)
@@ -292,17 +307,16 @@ class STATUS(GPS303Pkt):
     RESPOND = Respond.EXT
     OUT_KWARGS = (("upload_interval", int, 25),)
 
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.batt, self.ver, self.timezone, self.intvl = unpack(
             "BBBB", payload[:4]
         )
         if len(payload) > 4:
-            self.signal = payload[4]
+            self.signal: Optional[int] = payload[4]
         else:
             self.signal = None
-        return self
 
-    def out_encode(self):  # Set interval in minutes
+    def out_encode(self) -> bytes:  # Set interval in minutes
         return pack("B", self.upload_interval)
 
 
@@ -320,12 +334,12 @@ class WHITELIST_TOTAL(GPS303Pkt):  # Server sends to initiage sync (0x58)
     PROTO = 0x16
     OUT_KWARGS = (("number", int, 3),)
 
-    def out_encode(self):  # Number of whitelist entries
-        return pack("B", number)
+    def out_encode(self) -> bytes:  # Number of whitelist entries
+        return pack("B", self.number)
 
 
 class _WIFI_POSITIONING(GPS303Pkt):
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.dtime = payload[:6]
         if self.dtime == b"\0\0\0\0\0\0":
             self.devtime = None
@@ -348,14 +362,13 @@ class _WIFI_POSITIONING(GPS303Pkt):
                 "!HHB", gsm_slice[4 + i * 5 : 9 + i * 5]
             )
             self.gsm_cells.append((locac, cellid, -sigstr))
-        return self
 
 
 class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
     PROTO = 0x17
     RESPOND = Respond.INL
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         return bytes.fromhex(datetime.utcnow().strftime("%y%m%d%H%M%S"))
 
 
@@ -363,7 +376,7 @@ class TIME(GPS303Pkt):
     PROTO = 0x30
     RESPOND = Respond.INL
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         return pack("!HBBBBB", *datetime.utcnow().timetuple()[:6])
 
 
@@ -371,7 +384,7 @@ class PROHIBIT_LBS(GPS303Pkt):
     PROTO = 0x33
     OUT_KWARGS = (("status", int, 1),)
 
-    def out_encode(self):  # Server sent, 0-off, 1-on
+    def out_encode(self) -> bytes:  # Server sent, 0-off, 1-on
         return pack("B", self.status)
 
 
@@ -387,15 +400,16 @@ class GPS_LBS_SWITCH_TIMES(GPS303Pkt):
     # HHMM  - Time of boot
     # 00/01 - Don't set / Set time of shutdown
     # HHMM  - Time of shutdown
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         return b""  # TODO
 
 
 class _SET_PHONE(GPS303Pkt):
     OUT_KWARGS = (("phone", str, ""),)
 
-    def out_encode(self):
-        return self.phone.encode()
+    def out_encode(self) -> bytes:
+        self.phone: str
+        return self.phone.encode("")
 
 
 class REMOTE_MONITOR_PHONE(_SET_PHONE):
@@ -426,7 +440,7 @@ class GPS_OFF_PERIOD(GPS303Pkt):
         ("to", hhmm, "2359"),
     )
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         return (
             pack("B", self.onoff)
             + bytes.fromhex(self.fm)
@@ -445,7 +459,7 @@ class DND_PERIOD(GPS303Pkt):
         ("to2", hhmm, "2359"),
     )
 
-    def out_endode(self):
+    def out_encode(self) -> bytes:
         return (
             pack("B", self.onoff)
             + pack("B", self.week)
@@ -460,7 +474,7 @@ class RESTART_SHUTDOWN(GPS303Pkt):
     PROTO = 0x48
     OUT_KWARGS = (("flag", int, 0),)
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         # 1 - restart
         # 2 - shutdown
         return pack("B", self.flag)
@@ -472,27 +486,26 @@ class DEVICE(GPS303Pkt):
 
     # 0 - Stop looking for equipment
     # 1 - Start looking for equipment
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         return pack("B", self.flag)
 
 
 class ALARM_CLOCK(GPS303Pkt):
     PROTO = 0x50
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         # TODO implement parsing kwargs
         alarms = ((0, "0000"), (0, "0000"), (0, "0000"))
         return b"".join(
-            cls("B", day) + bytes.fromhex(tm) for day, tm in alarms
+            pack("B", day) + bytes.fromhex(tm) for day, tm in alarms
         )
 
 
 class STOP_ALARM(GPS303Pkt):
     PROTO = 0x56
 
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.flag = payload[0]
-        return self
 
 
 class SETUP(GPS303Pkt):
@@ -510,8 +523,8 @@ class SETUP(GPS303Pkt):
         ("phonenumbers", l3str, ["", "", ""]),
     )
 
-    def out_encode(self):
-        def pack3b(x):
+    def out_encode(self) -> bytes:
+        def pack3b(x: int) -> bytes:
             return pack("!I", x)[1:]
 
         return b"".join(
@@ -546,14 +559,14 @@ class WIFI_POSITIONING(_WIFI_POSITIONING):
     RESPOND = Respond.EXT
     OUT_KWARGS = (("latitude", float, None), ("longitude", float, None))
 
-    def out_encode(self):
+    def out_encode(self) -> bytes:
         if self.latitude is None or self.longitude is None:
             return b""
         return "{:+#010.8g},{:+#010.8g}".format(
             self.latitude, self.longitude
         ).encode()
 
-    def out_decode(self, length, payload):
+    def out_decode(self, length: int, payload: bytes) -> None:
         lat, lon = payload.decode().split(",")
         self.latitude = float(lat)
         self.longitude = float(lon)
@@ -562,8 +575,8 @@ class WIFI_POSITIONING(_WIFI_POSITIONING):
 class MANUAL_POSITIONING(GPS303Pkt):
     PROTO = 0x80
 
-    def in_decode(self, length, payload):
-        self.flag = payload[0] if len(payload) > 0 else None
+    def in_decode(self, length: int, payload: bytes) -> None:
+        self.flag = payload[0] if len(payload) > 0 else -1
         self.reason = {
             1: "Incorrect time",
             2: "LBS less",
@@ -573,7 +586,6 @@ class MANUAL_POSITIONING(GPS303Pkt):
             6: "LBS prohibited, WiFi absent",
             7: "GPS spacing < 50 m",
         }.get(self.flag, "Unknown")
-        return self
 
 
 class BATTERY_CHARGE(GPS303Pkt):
@@ -597,12 +609,11 @@ class POSITION_UPLOAD_INTERVAL(GPS303Pkt):
     RESPOND = Respond.EXT
     OUT_KWARGS = (("interval", int, 10),)
 
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.interval = unpack("!H", payload[:2])
-        return self
 
-    def out_encode(self):
-        return pack("!H", interval)
+    def out_encode(self) -> bytes:
+        return pack("!H", self.interval)
 
 
 class SOS_ALARM(GPS303Pkt):
@@ -613,9 +624,8 @@ class UNKNOWN_B3(GPS303Pkt):
     PROTO = 0xB3
     IN_KWARGS = (("asciidata", str, ""),)
 
-    def in_decode(self, length, payload):
+    def in_decode(self, length: int, payload: bytes) -> None:
         self.asciidata = payload.decode()
-        return self
 
 
 # Build dicts protocol number -> class and class name -> protocol number
@@ -634,7 +644,7 @@ if True:  # just to indent the code, sorry!
             PROTOS[cls.__name__] = cls.PROTO
 
 
-def class_by_prefix(prefix):
+def class_by_prefix(prefix: str) -> Union[type, List[Tuple[str, int]]]:
     lst = [
         (name, proto)
         for name, proto in PROTOS.items()
@@ -646,15 +656,15 @@ def class_by_prefix(prefix):
     return CLASSES[proto]
 
 
-def proto_by_name(name):
+def proto_by_name(name: str) -> int:
     return PROTOS.get(name, -1)
 
 
-def proto_of_message(packet):
-    return unpack("B", packet[1:2])[0]
+def proto_of_message(packet: bytes) -> int:
+    return packet[1]
 
 
-def inline_response(packet):
+def inline_response(packet: bytes) -> Optional[bytes]:
     proto = proto_of_message(packet)
     if proto in CLASSES:
         cls = CLASSES[proto]
@@ -663,12 +673,14 @@ def inline_response(packet):
     return None
 
 
-def parse_message(packet, is_incoming=True):
+def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
     """From a packet (without framing bytes) derive the XXX.In object"""
     length, proto = unpack("BB", packet[:2])
     payload = packet[2:]
     if proto not in CLASSES:
-        cause = ValueError(f"Proto {proto} is unknown")
+        cause: Union[DecodeError, ValueError] = ValueError(
+            f"Proto {proto} is unknown"
+        )
     else:
         try:
             if is_incoming:
