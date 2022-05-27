@@ -32,14 +32,9 @@ def runserver(conf):
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 zmsg.packet.hex(),
             )
-            if zmsg.peeraddr is not None:
-                addr, port = zmsg.peeraddr
-                peeraddr = str((str(addr), port))
-            else:
-                peeraddr = None
             stow(
                 is_incoming=zmsg.is_incoming,
-                peeraddr=peeraddr,
+                peeraddr=str(zmsg.peeraddr),
                 when=zmsg.when,
                 imei=zmsg.imei,
                 proto=proto_of_message(zmsg.packet),

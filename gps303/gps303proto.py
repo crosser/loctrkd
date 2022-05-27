@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from inspect import isclass
 from struct import error, pack, unpack
+from typing import Any, Callable, Tuple
 
 __all__ = (
     "class_by_prefix",
@@ -153,8 +154,8 @@ class Respond(Enum):
 class GPS303Pkt(metaclass=MetaPkt):
     RESPOND = Respond.NON  # Do not send anything back by default
     PROTO: int
-    IN_KWARGS = ()
-    OUT_KWARGS = ()
+    IN_KWARGS: Tuple[Tuple[str, Callable, Any], ...] = ()
+    OUT_KWARGS: Tuple[Tuple[str, Callable, Any], ...] = ()
 
     def __init__(self, *args, **kwargs):
         """
