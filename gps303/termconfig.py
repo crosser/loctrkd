@@ -1,5 +1,6 @@
 """ For when responding to the terminal is not trivial """
 
+from configparser import ConfigParser
 from datetime import datetime, timezone
 from logging import getLogger
 from struct import pack
@@ -12,10 +13,11 @@ from .zmsg import Bcast, Resp, topic
 log = getLogger("gps303/termconfig")
 
 
-def runserver(conf):
+def runserver(conf: ConfigParser) -> None:
     termconfig = common.normconf(conf["termconfig"])
-    zctx = zmq.Context()
-    zsub = zctx.socket(zmq.SUB)
+    # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
+    zctx = zmq.Context()  # type: ignore
+    zsub = zctx.socket(zmq.SUB)  # type: ignore
     zsub.connect(conf.get("collector", "publishurl"))
     for proto in (
         STATUS.PROTO,
@@ -23,7 +25,7 @@ def runserver(conf):
         POSITION_UPLOAD_INTERVAL.PROTO,
     ):
         zsub.setsockopt(zmq.SUBSCRIBE, topic(proto))
-    zpush = zctx.socket(zmq.PUSH)
+    zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
 
     try:
