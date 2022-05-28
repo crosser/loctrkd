@@ -1,5 +1,6 @@
 """ Store zmq broadcasts to sqlite """
 
+from configparser import ConfigParser
 from datetime import datetime, timezone
 from logging import getLogger
 import zmq
@@ -12,12 +13,13 @@ from .zmsg import Bcast
 log = getLogger("gps303/storage")
 
 
-def runserver(conf):
+def runserver(conf: ConfigParser) -> None:
     dbname = conf.get("storage", "dbfn")
     log.info('Using Sqlite3 database "%s"', dbname)
     initdb(dbname)
-    zctx = zmq.Context()
-    zsub = zctx.socket(zmq.SUB)
+    # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
+    zctx = zmq.Context()  # type: ignore
+    zsub = zctx.socket(zmq.SUB)  # type: ignore
     zsub.connect(conf.get("collector", "publishurl"))
     zsub.setsockopt(zmq.SUBSCRIBE, b"")
 
