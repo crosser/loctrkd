@@ -1,17 +1,23 @@
 import googlemaps as gmaps
-from sqlite3 import connect
+from typing import Any, Dict, List, Tuple
 
 gclient = None
 
 
-def init(conf):
+def init(conf: Dict[str, Any]) -> None:
     global gclient
     with open(conf["googlemaps"]["accesstoken"], encoding="ascii") as fl:
         token = fl.read().rstrip()
     gclient = gmaps.Client(key=token)
 
 
-def lookup(mcc, mnc, gsm_cells, wifi_aps):
+def lookup(
+    mcc: int,
+    mnc: int,
+    gsm_cells: List[Tuple[int, int, int]],
+    wifi_aps: List[Tuple[str, int]],
+) -> Tuple[float, float]:
+    assert gclient is not None
     kwargs = {
         "home_mobile_country_code": mcc,
         "home_mobile_network_code": mnc,
@@ -39,6 +45,7 @@ def lookup(mcc, mnc, gsm_cells, wifi_aps):
 
 if __name__.endswith("__main__"):
     from datetime import datetime, timezone
+    from sqlite3 import connect
     import sys
     from .gps303proto import *
 
