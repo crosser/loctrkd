@@ -18,7 +18,17 @@ from datetime import datetime, timezone
 from enum import Enum
 from inspect import isclass
 from struct import error, pack, unpack
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
 
 __all__ = (
     "class_by_prefix",
@@ -120,37 +130,40 @@ class MetaPkt(type):
     respectively.
     """
 
+    if TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> Any:
+            pass
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            pass
+
     def __new__(
-        cls, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]
+        cls: Type["MetaPkt"],
+        name: str,
+        bases: Tuple[type, ...],
+        attrs: Dict[str, Any],
     ) -> "MetaPkt":
         newcls = super().__new__(cls, name, bases, attrs)
-        setattr(
-            newcls,
-            "In",
-            super().__new__(
-                cls,
-                name + ".In",
-                (newcls,) + bases,
-                {
-                    "KWARGS": newcls.IN_KWARGS,
-                    "decode": newcls.in_decode,
-                    "encode": newcls.in_encode,
-                },
-            ),
+        newcls.In = super().__new__(
+            cls,
+            name + ".In",
+            (newcls,) + bases,
+            {
+                "KWARGS": newcls.IN_KWARGS,
+                "decode": newcls.in_decode,
+                "encode": newcls.in_encode,
+            },
         )
-        setattr(
-            newcls,
-            "Out",
-            super().__new__(
-                cls,
-                name + ".Out",
-                (newcls,) + bases,
-                {
-                    "KWARGS": newcls.OUT_KWARGS,
-                    "decode": newcls.out_decode,
-                    "encode": newcls.out_encode,
-                },
-            ),
+        newcls.Out = super().__new__(
+            cls,
+            name + ".Out",
+            (newcls,) + bases,
+            {
+                "KWARGS": newcls.OUT_KWARGS,
+                "decode": newcls.out_decode,
+                "encode": newcls.out_encode,
+            },
         )
         return newcls
 
@@ -169,6 +182,14 @@ class GPS303Pkt(metaclass=MetaPkt):
     KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
     In: Type["GPS303Pkt"]
     Out: Type["GPS303Pkt"]
+
+    if TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> Any:
+            pass
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            pass
 
     def __init__(self, *args: Any, **kwargs: Any):
         """
