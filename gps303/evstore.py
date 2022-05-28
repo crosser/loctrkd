@@ -1,6 +1,7 @@
 """ sqlite event store """
 
 from sqlite3 import connect, OperationalError
+from typing import Any, List, Tuple
 
 __all__ = "fetch", "initdb", "stow"
 
@@ -16,7 +17,7 @@ SCHEMA = """create table if not exists events (
 )"""
 
 
-def initdb(dbname):
+def initdb(dbname: str) -> None:
     global DB
     DB = connect(dbname)
     try:
@@ -28,7 +29,7 @@ def initdb(dbname):
         DB.execute(SCHEMA)
 
 
-def stow(**kwargs):
+def stow(**kwargs: Any) -> None:
     assert DB is not None
     parms = {
         k: kwargs[k] if k in kwargs else v
@@ -53,7 +54,9 @@ def stow(**kwargs):
     DB.commit()
 
 
-def fetch(imei, matchlist, backlog):
+def fetch(
+    imei: str, matchlist: List[Tuple[bool, int]], backlog: int
+) -> List[Tuple[bool, float, bytes]]:
     # matchlist is a list of tuples (is_incoming, proto)
     # returns a list of tuples (is_incoming, timestamp, packet)
     assert DB is not None
