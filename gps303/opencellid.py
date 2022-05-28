@@ -3,18 +3,22 @@ Lookaside backend to query local opencellid database
 """
 
 from sqlite3 import connect
+from typing import Any, Dict, List, Tuple
 
 __all__ = "init", "lookup"
 
 ldb = None
 
 
-def init(conf):
+def init(conf: Dict[str, Any]) -> None:
     global ldb
     ldb = connect(conf["opencellid"]["dbfn"])
 
 
-def lookup(mcc, mnc, gsm_cells, __):
+def lookup(
+    mcc: int, mnc: int, gsm_cells: List[Tuple[int, int, int]], __: Any
+) -> Tuple[float, float]:
+    assert ldb is not None
     lc = ldb.cursor()
     lc.execute("""attach database ":memory:" as mem""")
     lc.execute("create table mem.seen (locac int, cellid int, signal int)")
@@ -34,7 +38,7 @@ def lookup(mcc, mnc, gsm_cells, __):
     )
     data = list(lc.fetchall())
     if not data:
-        return None, None
+        return 0.0, 0.0
     sumsig = sum([1 / sig for _, _, sig in data])
     nsigs = [1 / sig / sumsig for _, _, sig in data]
     avlat = sum([lat * nsig for (lat, _, _), nsig in zip(data, nsigs)])
