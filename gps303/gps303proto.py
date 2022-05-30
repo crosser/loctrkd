@@ -665,7 +665,9 @@ if True:  # just to indent the code, sorry!
             PROTOS[cls.__name__] = cls.PROTO
 
 
-def class_by_prefix(prefix: str) -> Union[type, List[Tuple[str, int]]]:
+def class_by_prefix(
+    prefix: str,
+) -> Union[Type[GPS303Pkt], List[Tuple[str, int]]]:
     lst = [
         (name, proto)
         for name, proto in PROTOS.items()

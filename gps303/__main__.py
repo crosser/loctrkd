@@ -1,10 +1,12 @@
 """ Command line tool for sending requests to the terminal """
 
+from configparser import ConfigParser
 from datetime import datetime, timezone
 from getopt import getopt
 from logging import getLogger
 from sys import argv
 from time import time
+from typing import List, Tuple
 import zmq
 
 from . import common
@@ -14,9 +16,12 @@ from .zmsg import Bcast, Resp
 log = getLogger("gps303")
 
 
-def main(conf, opts, args):
-    zctx = zmq.Context()
-    zpush = zctx.socket(zmq.PUSH)
+def main(
+    conf: ConfigParser, opts: List[Tuple[str, str]], args: List[str]
+) -> None:
+    # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
+    zctx = zmq.Context()  # type: ignore
+    zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
 
     if len(args) < 2:
