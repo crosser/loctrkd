@@ -1,15 +1,17 @@
-from subprocess import run
+from subprocess import call
 from shutil import which
 from unittest import TestCase
 
 
 class TypeCheck(TestCase):
-    def test_mypy(self):
+    def test_mypy(self) -> None:
         if not which("mypy"):
-            self.fail(f"mypy not installed.")
-        cmd = ["mypy", "--strict", "--ignore-missing-imports", "gps303"]
-        output = run(cmd, capture_output=True)
-        if output.returncode != 0:
-            self.fail(
-                f"mypy exited with code {output.returncode}:\n{output.stderr.decode()}"
-            )
+            self.fail("mypy not installed.")
+        cmd = [
+            "mypy",
+            "--strict",
+            "--ignore-missing-imports",
+            "gps303",
+            "test",
+        ]
+        self.assertEqual(call(cmd), 0, "mypy typecheck")

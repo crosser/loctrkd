@@ -5,7 +5,7 @@ from unittest import TestCase
 
 
 class BlackFormatter(TestCase):
-    def test_black(self):
+    def test_black(self) -> None:
         if not which("black"):
             self.fail(f"black not installed.")
         cmd = (
