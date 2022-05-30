@@ -1,5 +1,6 @@
 """ Estimate coordinates from WIFI_POSITIONING and send back """
 
+from configparser import ConfigParser
 from datetime import datetime, timezone
 from importlib import import_module
 from logging import getLogger
@@ -14,14 +15,15 @@ from .zmsg import Bcast, Resp, topic
 log = getLogger("gps303/lookaside")
 
 
-def runserver(conf):
+def runserver(conf: ConfigParser) -> None:
     qry = import_module("." + conf.get("lookaside", "backend"), __package__)
     qry.init(conf)
-    zctx = zmq.Context()
-    zsub = zctx.socket(zmq.SUB)
+    # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
+    zctx = zmq.Context()  # type: ignore
+    zsub = zctx.socket(zmq.SUB)  # type: ignore
     zsub.connect(conf.get("collector", "publishurl"))
     zsub.setsockopt(zmq.SUBSCRIBE, topic(WIFI_POSITIONING.PROTO))
-    zpush = zctx.socket(zmq.PUSH)
+    zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
 
     try:
