@@ -5,10 +5,13 @@ Priority: optional
 Standards-Version: 4.5.1
 X-Python-Version: >= 3.6
 Homepage: http://www.average.org/gps303
-Build-Depends: debhelper-compat (= 12),
- dh-python,
- python3-all,
- python3-setuptools,
+Build-Depends: black,
+               debhelper-compat (= 12),
+               dh-python,
+               mypy,
+               pylint,
+               python3-all,
+               python3-setuptools,
 
 Package: python3-gps303
 Architecture: all
