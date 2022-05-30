@@ -1,3 +1,10 @@
+gps303 (0.97) experimental; urgency=medium
+
+  * adjust tests
+  * typecheck: skip test if mypy verison < 0.942
+
+ -- Eugene Crosser <crosser@average.org>  Tue, 31 May 2022 01:05:39 +0200
+
 gps303 (0.96) experimental; urgency=medium
 
   * Do not write startup message for command-line cmds
