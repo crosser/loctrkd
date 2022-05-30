@@ -1,3 +1,27 @@
+gps303 (0.96) experimental; urgency=medium
+
+  * Do not write startup message for command-line cmds
+  * Add a (short) man page
+  * typing: make zmsg.py typecheck
+  * typing: annotate gps303proto.py (mostly)
+  * typechecking: less hacky deal with dynamic attrs
+  * typing: annotate opencellid.py
+  * typchecking: annotate googlemaps.py
+  * typechecking: annotate evstore.py
+  * typechecking: annotate common.py
+  * typeckecing: annotate ocid_dload.py
+  * typeckecing: annotate watch.py
+  * typechecking: annotate termconfig.py
+  * typeckecking: annotate storage.py
+  * typing: annotate lookaside.py
+  * typechecking: annotate collector.py
+  * typeckeck: annotate __main__ and fix gps303proto
+  * typeckecking: annotate wsgateway.py
+  * formatting: revive black formatting
+  * unittest: type checking and formatting
+
+ -- Eugene Crosser <crosser@average.org>  Tue, 31 May 2022 00:36:33 +0200
+
 gps303 (0.95) experimental; urgency=medium
 
   * Quick fix for a missing variable
