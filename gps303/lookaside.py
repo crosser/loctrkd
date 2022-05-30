@@ -38,7 +38,9 @@ def runserver(conf: ConfigParser) -> None:
                 msg,
             )
             try:
-                lat, lon = qry.lookup(msg.mcc, msg.mnc, msg.gsm_cells, msg.wifi_aps)
+                lat, lon = qry.lookup(
+                    msg.mcc, msg.mnc, msg.gsm_cells, msg.wifi_aps
+                )
                 resp = Resp(
                     imei=zmsg.imei,
                     when=zmsg.when,  # not the current time, but the original!

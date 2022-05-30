@@ -128,7 +128,9 @@ class Clients:
             del self.by_imei[clnt.imei]
         del self.by_fd[fd]
 
-    def recv(self, fd: int) -> Optional[List[Tuple[Optional[str], float, Tuple[str, int], bytes]]]:
+    def recv(
+        self, fd: int
+    ) -> Optional[List[Tuple[Optional[str], float, Tuple[str, int], bytes]]]:
         clnt = self.by_fd[fd]
         msgs = clnt.recv()
         if msgs is None:
@@ -139,7 +141,11 @@ class Clients:
                 if clnt.imei:
                     self.by_imei[clnt.imei] = clnt
                 else:
-                    log.warning("Login message from %s: %s, but client imei unfilled", peeraddr, packet)
+                    log.warning(
+                        "Login message from %s: %s, but client imei unfilled",
+                        peeraddr,
+                        packet,
+                    )
             result.append((clnt.imei, when, peeraddr, packet))
             log.debug(
                 "Received from %s (IMEI %s): %s",
