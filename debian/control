@@ -12,6 +12,8 @@ Build-Depends: black,
                pylint,
                python3-all,
                python3-setuptools,
+               python3-wsproto,
+               python3-zmq,
 
 Package: python3-gps303
 Architecture: all
