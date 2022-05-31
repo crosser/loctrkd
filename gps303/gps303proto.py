@@ -105,6 +105,8 @@ def hhmm(x: str) -> str:
 def l3str(x: Union[str, List[str]]) -> List[str]:
     if isinstance(x, str):
         lx = x.split(",")
+    else:
+        lx = x
     if len(lx) != 3 or not all(isinstance(el, str) for el in x):
         raise ValueError(str(lx) + " is not a list of three strings")
     return lx
@@ -113,6 +115,8 @@ def l3str(x: Union[str, List[str]]) -> List[str]:
 def l3int(x: Union[str, List[int]]) -> List[int]:
     if isinstance(x, str):
         lx = [int(el) for el in x.split(",")]
+    else:
+        lx = x
     if len(lx) != 3 or not all(isinstance(el, int) for el in lx):
         raise ValueError(str(lx) + " is not a list of three integers")
     return lx
