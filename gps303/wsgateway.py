@@ -152,7 +152,11 @@ class Client:
                 e,
             )
             self.ws_data = try_http(data, self.sock.fileno(), e)
-            self.write()  # TODO this is a hack
+            # this `write` is a hack - writing _ought_ to be done at the
+            # stage when all other writes are performed. But I could not
+            # arrange it so in a logical way. Let it stay this way. The
+            # whole http server affair is a hack anyway.
+            self.write()
             log.debug("Sending HTTP response to %d", self.sock.fileno())
             msgs = None
         else:
