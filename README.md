@@ -105,6 +105,51 @@ Example of a status message
  "battery": 46}
 ```
 
+## Lookaside service
+
+When the terminal has no gps reception, it uses secondary sources of
+location hints: list of nearby cell towers, and list of MAC addresses
+of nearby WiFi access point, with signal strength. It expects a
+response from the server with approximated location. In order to get
+such approximation, the server system needs a source of information
+about cell towers and/or WiFi access points in the area. We support
+two ways to get approximated location: querying Google geolocation
+service, and using locally installed database filled with data
+downloaded from opencellid crowdsourced data. For both options,
+you will need an access token. Google service is "online", you are
+making a request for each approximation (and thus reveal location of
+your users to Google). Opencellid service is "offline": you download
+the file with locations of all cell towers in the country (or worldwide)
+one, or refresh it relatively long intervals, such as a week or a month,
+and then all queries are fulfilled locally. Note that opencellid data
+does not contain WiFi access points, so the result will less accurate.
+
+Lookaside service can be configured to use either of the options by
+assigning `backend = opencellid` or `backend = googlemaps` in the
+configuration file (`/etc/gps303.conf` by default). Then, the file
+containing the auth token needs to be specified in the `[googlemaps]`
+section or `[opencellid]` section of the configuration file, depenging
+on which backend was chosen.
+
+Note that in both cases, statement in the configuration file needs to
+point to the _file_ that contains the token, rather then contain the
+_token itself_.
+
+This part of setup cannot be automated, because each user needs to
+obtain their own access token with one of the above services.
+
+## Termconfig Service
+
+To configure terminal settings, such as SOS numbers, update intervals etc.,
+"termconfig" service consults the configuration file. It should contain
+the section `[termconfig]`, and optionally sections named after the IMEIs
+of individual terminals. `[termconfig]` values are used when the individual
+section is not present.
+
+For a bigger multi-client setup the user will want to reimplement this
+service to use some kind of a database, that would be also controllable
+by the owners of the terminals.
+
 ## Homepage and source
 
 Home page is [http://www.average.org/gps303/](http://www.average.org/gps303/)
