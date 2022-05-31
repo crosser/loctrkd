@@ -14,7 +14,6 @@ log = getLogger("gps303/termconfig")
 
 
 def runserver(conf: ConfigParser) -> None:
-    termconfig = common.normconf(conf["termconfig"])
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zsub = zctx.socket(zmq.SUB)  # type: ignore
@@ -43,6 +42,10 @@ def runserver(conf: ConfigParser) -> None:
                 log.error(
                     "%s does not expect externally provided response", msg
                 )
+            if zmsg.imei is not None and conf.has_section(zmsg.imei):
+                termconfig = common.normconf(conf[zmsg.imei])
+            else:
+                termconfig = common.normconf(conf["termconfig"])
             kwargs = {}
             if isinstance(msg, STATUS):
                 kwargs = {
