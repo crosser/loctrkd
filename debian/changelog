@@ -1,3 +1,16 @@
+gps303 (0.98) experimental; urgency=medium
+
+  * include runtime deps as build-time for typecheck
+  * fix l3str/l3int breakage provoked by typeckeck
+  * make termconfig use unit specific config section
+  * expand README: lookaside and termconfig sections.
+  * wsgateway: reclassify http write hack as permanent
+  * Update README with configuring the terminal
+  * Implement remaining "Out" commands
+  * do not run black older than 21.1
+
+ -- Eugene Crosser <crosser@average.org>  Tue, 07 Jun 2022 00:17:55 +0200
+
 gps303 (0.97) experimental; urgency=medium
 
   * adjust tests
