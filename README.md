@@ -52,6 +52,23 @@ five daemons that talk to each other via zeromq:
 There is also a command-line tool to send messages to the terminal.
 A number of useful actions can be initiated in this way.
 
+## Configuring the Terminal
+
+Send SMS to the number assigned to the SIM card, with the text
+
+```
+server#<your_server_address>#<port>#
+```
+
+Server address may be FQDN or a literal IP address. Port is a number;
+by default, this application listens on the port 4303. A different
+port can be chosen in the config file.
+
+It is recommended to keep the service running while the terminal is
+powered up: it is possible that the terminal is programmed to be reset
+to the default configuration if it cannot connect to the servicse for
+some time.
+
 ## Websocket messages
 
 Websockets server communicates with the web page via json encoded
