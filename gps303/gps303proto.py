@@ -91,6 +91,16 @@ def intx(x: Union[str, int]) -> int:
     return x
 
 
+def boolx(x: Union[str, bool]) -> bool:
+    if isinstance(x, str):
+        if x.upper() in ("ON", "TRUE", "1"):
+            return True
+        if x.upper() in ("OFF", "FALSE", "0"):
+            return False
+        raise ValueError(str(x) + " could not be parsed as a Boolean")
+    return x
+
+
 def hhmm(x: str) -> str:
     """Check for the string that represents hours and minutes"""
     if not isinstance(x, str) or len(x) != 4:
@@ -102,6 +112,13 @@ def hhmm(x: str) -> str:
     return x
 
 
+def hhmmhhmm(x: str) -> str:
+    """Check for the string that represents hours and minutes twice"""
+    if not isinstance(x, str) or len(x) != 8:
+        raise ValueError(str(x) + " is not an eight-character string")
+    return hhmm(x[:4]) + hhmm(x[4:])
+
+
 def l3str(x: Union[str, List[str]]) -> List[str]:
     if isinstance(x, str):
         lx = x.split(",")
@@ -110,6 +127,33 @@ def l3str(x: Union[str, List[str]]) -> List[str]:
     if len(lx) != 3 or not all(isinstance(el, str) for el in x):
         raise ValueError(str(lx) + " is not a list of three strings")
     return lx
+
+
+def l3alarms(x: Union[str, List[Tuple[int, str]]]) -> List[Tuple[int, str]]:
+    def alrmspec(sub: str) -> Tuple[int, str]:
+        if len(sub) != 7:
+            raise ValueError(sub + " does not represent day and time")
+        return (
+            {
+                "MON": 1,
+                "TUE": 2,
+                "WED": 3,
+                "THU": 4,
+                "FRI": 5,
+                "SAT": 6,
+                "SUN": 7,
+            }[sub[:3].upper()],
+            sub[3:],
+        )
+
+    if isinstance(x, str):
+        lx = [alrmspec(sub) for sub in x.split(",")]
+    else:
+        lx = x
+    lx.extend([(0, "0000") for _ in range(3 - len(lx))])
+    if len(lx) != 3 or any(d < 0 or d > 7 for d, tm in lx):
+        raise ValueError(str(lx) + " is a wrong alarms specification")
+    return [(d, hhmm(tm)) for d, tm in lx]
 
 
 def l3int(x: Union[str, List[int]]) -> List[int]:
@@ -416,17 +460,28 @@ class PROHIBIT_LBS(GPS303Pkt):
 class GPS_LBS_SWITCH_TIMES(GPS303Pkt):
     PROTO = 0x34
 
-    # Data is in packed decimal
-    # 00/01 - GPS on/off
-    # 00/01 - Don't set / Set upload period
-    # HHMMHHMM - Upload period
-    # 00/01 - LBS on/off
-    # 00/01 - Don't set / Set time of boot
-    # HHMM  - Time of boot
-    # 00/01 - Don't set / Set time of shutdown
-    # HHMM  - Time of shutdown
+    OUT_KWARGS = (
+        ("gps_off", boolx, False),  # Clarify the meaning of 0/1
+        ("gps_interval_set", boolx, False),
+        ("gps_interval", hhmmhhmm, "00000000"),
+        ("lbs_off", boolx, False),  # Clarify the meaning of 0/1
+        ("boot_time_set", boolx, False),
+        ("boot_time", hhmm, "0000"),
+        ("shut_time_set", boolx, False),
+        ("shut_time", hhmm, "0000"),
+    )
+
     def out_encode(self) -> bytes:
-        return b""  # TODO
+        return (
+            pack("B", self.gps_off)
+            + pack("B", self.gps_interval_set)
+            + bytes.fromhex(self.gps_interval)
+            + pack("B", self.lbs_off)
+            + pack("B", self.boot_time_set)
+            + bytes.fromhex(self.boot_time)
+            + pack("B", self.shut_time_set)
+            + bytes.fromhex(self.shut_time)
+        )
 
 
 class _SET_PHONE(GPS303Pkt):
@@ -517,12 +572,15 @@ class DEVICE(GPS303Pkt):
 
 class ALARM_CLOCK(GPS303Pkt):
     PROTO = 0x50
+    OUT_KWARGS: Tuple[
+        Tuple[str, Callable[[Any], Any], List[Tuple[int, str]]], ...
+    ] = (
+        ("alarms", l3alarms, []),
+    )
 
     def out_encode(self) -> bytes:
-        # TODO implement parsing kwargs
-        alarms = ((0, "0000"), (0, "0000"), (0, "0000"))
         return b"".join(
-            pack("B", day) + bytes.fromhex(tm) for day, tm in alarms
+            pack("B", day) + bytes.fromhex(tm) for day, tm in self.alarms
         )
 
 
