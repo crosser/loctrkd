@@ -1,27 +1,24 @@
+""" Example that produces gpx from events in evstore """
+
+# run as:
+# python -m gps303.mkgpx <sqlite-file> <IMEI>
+# Generated gpx is emitted to stdout
+
 from datetime import datetime, timezone
 from sqlite3 import connect
 import sys
 
 from .gps303proto import *
-from . import opencellid as ocid
 
-ocid.init({"opencellid": {"dbfn": sys.argv[2]}})
 db = connect(sys.argv[1])
 c = db.cursor()
 c.execute(
-    "select tstamp, packet from events where proto in ({})".format(
-        ", ".join(
-            [
-                str(n)
-                for n in (
-                    WIFI_POSITIONING.PROTO,
-                    WIFI_OFFLINE_POSITIONING.PROTO,
-                    GPS_POSITIONING.PROTO,
-                    GPS_OFFLINE_POSITIONING.PROTO,
-                )
-            ]
-        )
-    )
+    """select tstamp, is_incoming, packet from events
+       where imei = ?
+       and ((is_incoming = false and proto = ?) 
+         or (is_incoming = true and proto = ?))
+       order by tstamp""",
+    (sys.argv[2], WIFI_POSITIONING.PROTO, GPS_POSITIONING.PROTO),
 )
 
 print(
@@ -36,16 +33,9 @@ xmlns="http://www.topografix.com/GPX/1/1">
 """
 )
 
-for tstamp, packet in c:
-    msg = parse_message(packet)
-    if isinstance(msg, (WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING)):
-        lat, lon = ocid.lookup(msg.mcc, msg.mnc, msg.gsm_cells, msg.wifi_aps)
-        if lat is None or lon is None:
-            continue
-    elif isinstance(msg, (GPS_POSITIONING, GPS_OFFLINE_POSITIONING)):
-        lat, lon = msg.latitude, msg.longitude
-    else:
-        continue
+for tstamp, is_incoming, packet in c:
+    msg = parse_message(packet, is_incoming=is_incoming)
+    lat, lon = msg.latitude, msg.longitude
     isotime = (
         datetime.fromtimestamp(tstamp).astimezone(tz=timezone.utc).isoformat()
     )
