@@ -21,6 +21,8 @@ from .zmsg import Bcast, Resp
 
 log = getLogger("gps303/collector")
 
+MAXBUFFER: int = 4096
+
 
 class Client:
     """Connected socket to the terminal plus buffer and metadata"""
@@ -39,7 +41,7 @@ class Client:
     def recv(self) -> Optional[List[Tuple[float, Tuple[str, int], bytes]]]:
         """Read from the socket and parse complete messages"""
         try:
-            segment = self.sock.recv(4096)
+            segment = self.sock.recv(MAXBUFFER)
         except OSError as e:
             log.warning(
                 "Reading from fd %d (IMEI %s): %s",
@@ -57,6 +59,10 @@ class Client:
             return None
         when = time()
         self.buffer += segment
+        if len(self.buffer) > MAXBUFFER:
+            # We are receiving junk. Let's drop it or we run out of memory.
+            log.warning("More than %d unparseable data, dropping", MAXBUFFER)
+            self.buffer = b""
         msgs = []
         while True:
             framestart = self.buffer.find(b"xx")
@@ -64,8 +70,9 @@ class Client:
                 break
             if framestart > 0:  # Should not happen, report
                 log.warning(
-                    'Undecodable data "%s" from fd %d (IMEI %s)',
-                    self.buffer[:framestart].hex(),
+                    'Undecodable data (%d) "%s" from fd %d (IMEI %s)',
+                    framestart,
+                    self.buffer[:framestart][:64].hex(),
                     self.sock.fileno(),
                     self.imei,
                 )
@@ -82,8 +89,10 @@ class Client:
             # Do this embarrassing hack to avoid accidental match
             # of some binary data in the packet against '\r\n'.
             while True:
-                frameend = self.buffer.find(b"\r\n", frameend)
-                if frameend >= (exp_end - 3):  # Found realistic match
+                frameend = self.buffer.find(b"\r\n", frameend + 1)
+                if frameend == -1 or frameend >= (
+                    exp_end - 3
+                ):  # Found realistic match or none
                     break
             if frameend == -1:  # Incomplete frame, return what we have
                 break

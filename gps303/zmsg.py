@@ -119,7 +119,7 @@ class Bcast(_Zmsg):
                 "BB16s",
                 int(self.is_incoming),
                 self.proto,
-                "0000000000000000"
+                b"0000000000000000"
                 if self.imei is None
                 else self.imei.encode(),
             )
