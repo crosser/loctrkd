@@ -171,7 +171,7 @@ class Clients:
             log.info("Not connected (IMEI %s)", resp.imei)
 
 
-def runserver(conf: ConfigParser) -> None:
+def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zpub = zctx.socket(zmq.PUB)  # type: ignore
@@ -224,7 +224,7 @@ def runserver(conf: ConfigParser) -> None:
                                     packet=packet,
                                 ).packed
                             )
-                            if proto == HIBERNATION.PROTO:
+                            if proto == HIBERNATION.PROTO and handle_hibernate:
                                 log.debug(
                                     "HIBERNATION from fd %d (IMEI %s)",
                                     sk,
@@ -258,7 +258,10 @@ def runserver(conf: ConfigParser) -> None:
                 fd = clients.add(clntsock, clntaddr)
                 poller.register(fd, flags=zmq.POLLIN)
     except KeyboardInterrupt:
-        pass
+        zpub.close()
+        zpull.close()
+        zctx.destroy()  # type: ignore
+        tcpl.close()
 
 
 if __name__.endswith("__main__"):
