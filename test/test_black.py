@@ -3,7 +3,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 from re import match
 from subprocess import run
 from shutil import which
-from unittest import TestCase, skipUnless
+from unittest import main, TestCase, skipUnless
 
 black_version = 0.0
 try:
@@ -33,3 +33,7 @@ class BlackFormatter(TestCase):
             self.fail(
                 f"black exited with code {output.returncode}:\n{output.stderr.decode()}"
             )
+
+
+if __name__ == "__main__":
+    main()

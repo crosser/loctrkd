@@ -1,7 +1,7 @@
 from pkg_resources import get_distribution, DistributionNotFound
 from subprocess import call
 from shutil import which
-from unittest import skipUnless, TestCase
+from unittest import main, skipUnless, TestCase
 
 mypy_version = 0.0
 try:
@@ -23,3 +23,7 @@ class TypeCheck(TestCase):
             "test",
         ]
         self.assertEqual(call(cmd), 0, "mypy typecheck")
+
+
+if __name__ == "__main__":
+    main()
