@@ -3,7 +3,14 @@
 from configparser import ConfigParser
 from logging import getLogger
 from os import umask
-from socket import socket, AF_INET6, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from socket import (
+    socket,
+    AF_INET6,
+    SOCK_STREAM,
+    SOL_SOCKET,
+    SO_KEEPALIVE,
+    SO_REUSEADDR,
+)
 from struct import pack
 from time import time
 from typing import Dict, List, Optional, Tuple
@@ -206,6 +213,7 @@ def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
                             break
                 elif sk == tcpfd:
                     clntsock, clntaddr = tcpl.accept()
+                    clntsock.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
                     topoll.append((clntsock, clntaddr))
                 elif fl & zmq.POLLIN:
                     received = clients.recv(sk)
