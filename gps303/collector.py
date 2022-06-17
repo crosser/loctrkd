@@ -105,11 +105,18 @@ class Client:
                 break
             packet = self.buffer[2:frameend]
             self.buffer = self.buffer[frameend + 2 :]
+            if len(packet) < 2:  # frameend comes too early
+                log.warning("Packet too short: %s", packet)
+                break
             if proto_of_message(packet) == LOGIN.PROTO:
-                self.imei = parse_message(packet).imei
-                log.info(
-                    "LOGIN from fd %d (IMEI %s)", self.sock.fileno(), self.imei
-                )
+                msg = parse_message(packet)
+                if isinstance(msg, LOGIN):  # Can be unparseable
+                    self.imei = msg.imei
+                    log.info(
+                        "LOGIN from fd %d (IMEI %s)",
+                        self.sock.fileno(),
+                        self.imei,
+                    )
             msgs.append((when, self.addr, packet))
         return msgs
 
@@ -119,7 +126,7 @@ class Client:
         except OSError as e:
             log.error(
                 "Sending to fd %d (IMEI %s): %s",
-                self.sock.fileno,
+                self.sock.fileno(),
                 self.imei,
                 e,
             )

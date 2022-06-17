@@ -2,6 +2,8 @@
 
 from random import Random
 from socket import getaddrinfo, socket, AF_INET6, MSG_DONTWAIT, SOCK_STREAM
+from time import sleep
+from typing import Optional
 import unittest
 from .common import TestWithServers
 
@@ -23,19 +25,31 @@ class Fuzz(TestWithServers):
         self.sock.connect(skadr)
 
     def tearDown(self) -> None:
+        sleep(1)  # give collector some time
+        self._send_and_drain(None)
         self.sock.close()
         print("finished fuzzing")
         super().tearDown()
 
-    def test_fuzz(self) -> None:
+    def _send_and_drain(self, buf: Optional[bytes]) -> None:
+        if buf is not None:
+            self.sock.send(buf)
+        try:
+            self.sock.recv(4096, MSG_DONTWAIT)
+        except BlockingIOError:
+            pass
+
+    def test_stream(self) -> None:
         for _ in range(REPEAT):
             size = self.rnd.randint(1, 5000)
             buf = self.rnd.randbytes(size)
-            self.sock.send(buf)
-            try:
-                self.sock.recv(4096, MSG_DONTWAIT)
-            except BlockingIOError:
-                pass
+            self._send_and_drain(buf)
+
+    def test_msgs(self) -> None:
+        for _ in range(REPEAT):
+            size = self.rnd.randint(0, 300)
+            buf = b"xx" + self.rnd.randbytes(size) + b"\r\n"
+            self._send_and_drain(buf)
 
 
 if __name__ == "__main__":

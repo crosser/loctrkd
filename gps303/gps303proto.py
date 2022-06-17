@@ -313,8 +313,8 @@ class LOGIN(GPS303Pkt):
     # Default response for ACK, can also respond with STOP_UPLOAD
 
     def in_decode(self, length: int, payload: bytes) -> None:
-        self.imei = payload[:-1].hex()
-        self.ver = unpack("B", payload[-1:])[0]
+        self.imei = payload[:16].hex()
+        self.ver = payload[16]
 
 
 class SUPERVISION(GPS303Pkt):
@@ -763,7 +763,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
     length, proto = unpack("BB", packet[:2])
     payload = packet[2:]
     if proto not in CLASSES:
-        cause: Union[DecodeError, ValueError] = ValueError(
+        cause: Union[DecodeError, ValueError, IndexError] = ValueError(
             f"Proto {proto} is unknown"
         )
     else:
@@ -772,7 +772,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
                 return CLASSES[proto].In(length, payload)
             else:
                 return CLASSES[proto].Out(length, payload)
-        except DecodeError as e:
+        except (DecodeError, ValueError, IndexError) as e:
             cause = e
     if is_incoming:
         retobj = UNKNOWN.In(length, payload)
