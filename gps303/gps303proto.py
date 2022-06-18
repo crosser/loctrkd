@@ -313,8 +313,8 @@ class LOGIN(GPS303Pkt):
     # Default response for ACK, can also respond with STOP_UPLOAD
 
     def in_decode(self, length: int, payload: bytes) -> None:
-        self.imei = payload[:16].hex()
-        self.ver = payload[16]
+        self.imei = payload[:8].hex()
+        self.ver = payload[8]
 
 
 class SUPERVISION(GPS303Pkt):

@@ -52,7 +52,10 @@ def runserver(conf: ConfigParser) -> None:
                 log.warning("Lookup for %s resulted in %s", msg, e)
 
     except KeyboardInterrupt:
-        pass
+        zsub.close()
+        zpush.close()
+        zctx.destroy()  # type: ignore
+        qry.shut()
 
 
 if __name__.endswith("__main__"):

@@ -43,7 +43,8 @@ def runserver(conf: ConfigParser) -> None:
                 packet=zmsg.packet,
             )
     except KeyboardInterrupt:
-        pass
+        zsub.close()
+        zctx.destroy()  # type: ignore
 
 
 if __name__.endswith("__main__"):

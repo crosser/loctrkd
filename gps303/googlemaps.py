@@ -11,6 +11,10 @@ def init(conf: Dict[str, Any]) -> None:
     gclient = gmaps.Client(key=token)
 
 
+def shut() -> None:
+    return
+
+
 def lookup(
     mcc: int,
     mnc: int,

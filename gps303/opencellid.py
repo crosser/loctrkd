@@ -15,6 +15,11 @@ def init(conf: Dict[str, Any]) -> None:
     ldb = connect(conf["opencellid"]["dbfn"])
 
 
+def shut() -> None:
+    if ldb is not None:
+        ldb.close()
+
+
 def lookup(
     mcc: int, mnc: int, gsm_cells: List[Tuple[int, int, int]], __: Any
 ) -> Tuple[float, float]:

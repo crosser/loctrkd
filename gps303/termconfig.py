@@ -74,7 +74,9 @@ def runserver(conf: ConfigParser) -> None:
             zpush.send(resp.packed)
 
     except KeyboardInterrupt:
-        pass
+        zsub.close()
+        zpush.close()
+        zctx.destroy()  # type: ignore
 
 
 if __name__.endswith("__main__"):

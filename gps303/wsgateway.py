@@ -259,7 +259,7 @@ def runserver(conf: ConfigParser) -> None:
     global htmlfile
 
     initdb(conf.get("storage", "dbfn"))
-    htmlfile = conf.get("wsgateway", "htmlfile")
+    htmlfile = conf.get("wsgateway", "htmlfile", fallback=None)
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zsub = zctx.socket(zmq.SUB)  # type: ignore
@@ -402,7 +402,9 @@ def runserver(conf: ConfigParser) -> None:
             towait &= trywrite
             towait |= morewait
     except KeyboardInterrupt:
-        pass
+        zsub.close()
+        zctx.destroy()  # type: ignore
+        tcpl.close()
 
 
 if __name__.endswith("__main__"):
