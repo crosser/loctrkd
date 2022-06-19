@@ -63,7 +63,6 @@ class TestWithServers(TestCase):
         sleep(1)
 
     def tearDown(self) -> None:
-        sleep(1)
         for srvname, p in self.children:
             if p.pid is not None:
                 kill(p.pid, SIGINT)

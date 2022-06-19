@@ -27,7 +27,7 @@ class Fuzz(TestWithServers):
         sleep(1)  # give collector some time
         send_and_drain(self.sock, None)
         self.sock.close()
-        print("finished fuzzing")
+        sleep(1)  # Let the server close their side
         super().tearDown()
 
     def test_stream(self) -> None:
