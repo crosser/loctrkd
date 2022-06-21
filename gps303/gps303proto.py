@@ -85,6 +85,10 @@ class DecodeError(Exception):
             setattr(self, k, v)
 
 
+def maybe_int(x: Optional[int]) -> Optional[int]:
+    return None if x is None else int(x)
+
+
 def intx(x: Union[str, int]) -> int:
     if isinstance(x, str):
         x = int(x, 0)
@@ -311,10 +315,16 @@ class LOGIN(GPS303Pkt):
     PROTO = 0x01
     RESPOND = Respond.INL
     # Default response for ACK, can also respond with STOP_UPLOAD
+    IN_KWARGS = (("imei", str, "0000000000000000"), ("ver", int, 0))
 
     def in_decode(self, length: int, payload: bytes) -> None:
-        self.imei = payload[:8].hex()
+        self.imei = payload[:8].ljust(8, b"\0").hex()
         self.ver = payload[8]
+
+    def in_encode(self) -> bytes:
+        return bytes.fromhex(self.imei).ljust(8, b"\0")[:8] + pack(
+            "B", self.ver
+        )
 
 
 class SUPERVISION(GPS303Pkt):
@@ -374,6 +384,13 @@ class GPS_OFFLINE_POSITIONING(_GPS_POSITIONING):
 class STATUS(GPS303Pkt):
     PROTO = 0x13
     RESPOND = Respond.EXT
+    IN_KWARGS = (
+        ("batt", int, 100),
+        ("ver", int, 0),
+        ("timezone", int, 0),
+        ("intvl", int, 0),
+        ("signal", maybe_int, None),
+    )
     OUT_KWARGS = (("upload_interval", int, 25),)
 
     def in_decode(self, length: int, payload: bytes) -> None:
@@ -385,12 +402,22 @@ class STATUS(GPS303Pkt):
         else:
             self.signal = None
 
+    def in_encode(self) -> bytes:
+        return (
+            pack("BBBB", self.batt, self.ver, self.timezone, self.intvl) + b""
+            if self.signal is None
+            else pack("B", self.signal)
+        )
+
     def out_encode(self) -> bytes:  # Set interval in minutes
         return pack("B", self.upload_interval)
 
 
 class HIBERNATION(GPS303Pkt):  # Server can send to send devicee to sleep
     PROTO = 0x14
+
+    def in_encode(self) -> bytes:
+        return b""
 
 
 class RESET(GPS303Pkt):

@@ -44,8 +44,10 @@ def runserver(conf: ConfigParser) -> None:
                 )
             if zmsg.imei is not None and conf.has_section(zmsg.imei):
                 termconfig = common.normconf(conf[zmsg.imei])
-            else:
+            elif conf.has_section("termconfig"):
                 termconfig = common.normconf(conf["termconfig"])
+            else:
+                termconfig = {}
             kwargs = {}
             if isinstance(msg, STATUS):
                 kwargs = {

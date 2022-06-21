@@ -6,6 +6,7 @@ from sqlite3 import connect, Row
 from time import sleep
 import unittest
 from .common import send_and_drain, TestWithServers
+from gps303.gps303proto import *
 
 
 class Storage(TestWithServers):
@@ -26,16 +27,26 @@ class Storage(TestWithServers):
         super().tearDown()
 
     def test_storage(self) -> None:
-        buf = b"xx\r\x01\x03Y3\x90w\x19q\x85\x05\r\n"
-        send_and_drain(self.sock, buf)
+        for buf in (
+            LOGIN.In(imei="9999123456780000", ver=9).packed,
+            STATUS.In().packed,
+            HIBERNATION.In().packed,
+        ):
+            send_and_drain(self.sock, b"xx" + buf + b"\r\n")
         self.sock.close()
-        # TODO: make a proper sequence
         sleep(1)
-        print("checking database")
+        got = set()
         with connect(self.conf.get("storage", "dbfn")) as db:
             db.row_factory = Row
-            for row in db.execute("select * from events"):
-                print(dict(row))
+            for is_incoming, packet in db.execute(
+                "select is_incoming, packet from events"
+            ):
+                msg = parse_message(packet, is_incoming=is_incoming)
+                # print(msg)
+                got.add(type(msg))
+        self.assertEqual(
+            got, {LOGIN.Out, HIBERNATION.In, LOGIN.In, STATUS.Out, STATUS.In}
+        )
 
 
 if __name__ == "__main__":
