@@ -1,3 +1,25 @@
+gps303 (0.99) experimental; urgency=medium
+
+  * Revive mkgpx example script
+  * Drop data if we are receiving junk
+  * test: fuzzing collector
+  * test: complete fuzzer unittest
+  * collector: fix problems found by fuzzer test
+  * test: make unittests individually runnable
+  * collector: enable SO_KEEPALIVE on accepted conn.
+  * test: message fuzzer and fix found problems
+  * test: move `send_and_drain` to common module
+  * test: skeleton for an end-to-end unittest
+  * test: adjust sleeps and drains when daemons run
+  * test: minimally functional test_storage
+  * do not try to use zlib's _Decompress
+  * test: use IPv4 because github actions
+  * Add sample opencellid csv for tests
+  * test: better aquisition of free ports
+  * test: opencellid downloader
+
+ -- Eugene Crosser <crosser@average.org>  Wed, 22 Jun 2022 18:04:10 +0200
+
 gps303 (0.98) experimental; urgency=medium
 
   * include runtime deps as build-time for typecheck
