@@ -4,13 +4,14 @@ from random import Random
 from socket import getaddrinfo, socket, AF_INET, SOCK_STREAM
 from sqlite3 import connect, Row
 from time import sleep
+from typing import Any
 import unittest
 from .common import send_and_drain, TestWithServers
 from gps303.gps303proto import *
 
 
 class Storage(TestWithServers):
-    def setUp(self, *args: str) -> None:
+    def setUp(self, *args: str, **kwargs: Any) -> None:
         super().setUp("collector", "storage", "lookaside", "termconfig")
         for fam, typ, pro, cnm, skadr in getaddrinfo(
             "127.0.0.1",

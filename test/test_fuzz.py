@@ -3,6 +3,7 @@
 from random import Random
 from socket import getaddrinfo, socket, AF_INET, SOCK_STREAM
 from time import sleep
+from typing import Any
 import unittest
 from .common import send_and_drain, TestWithServers
 
@@ -10,7 +11,7 @@ REPEAT: int = 1000000
 
 
 class Fuzz(TestWithServers):
-    def setUp(self, *args: str) -> None:
+    def setUp(self, *args: str, **kwargs: Any) -> None:
         super().setUp("collector")
         self.rnd = Random()
         for fam, typ, pro, cnm, skadr in getaddrinfo(

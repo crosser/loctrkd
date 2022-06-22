@@ -1,7 +1,7 @@
 """ Common housekeeping for tests that rely on daemons """
 
 from configparser import ConfigParser, SectionProxy
-from contextlib import closing
+from contextlib import closing, ExitStack
 from importlib import import_module
 from multiprocessing import Process
 from os import kill, unlink
@@ -20,17 +20,18 @@ from time import sleep
 from typing import Optional
 from unittest import TestCase
 
+NUMPORTS = 3
+
 
 class TestWithServers(TestCase):
-    def setUp(self, *args: str) -> None:
-        with closing(socket(AF_INET6, SOCK_DGRAM)) as sock1, closing(
-            socket(AF_INET6, SOCK_DGRAM)
-        ) as sock2:
-            freeports = []
-            for sock in sock1, sock2:
-                sock.bind(("", 0))
-                sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-                freeports.append(sock.getsockname()[1])
+    def setUp(self, *args: str, httpd: bool = False) -> None:
+        freeports = []
+        with ExitStack() as stack:
+            for _ in range(NUMPORTS):
+                sk = stack.enter_context(closing(socket(AF_INET6, SOCK_DGRAM)))
+                sk.bind(("", 0))
+                sk.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+                freeports.append(sk.getsockname()[1])
         _, self.tmpfilebase = mkstemp()
         self.conf = ConfigParser()
         self.conf["collector"] = {
@@ -60,6 +61,8 @@ class TestWithServers(TestCase):
             p = Process(target=cls.runserver, args=(self.conf,), kwargs=kwargs)
             p.start()
             self.children.append((srvname, p))
+        if httpd:
+            pass
         sleep(1)
 
     def tearDown(self) -> None:
