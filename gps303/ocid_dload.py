@@ -3,8 +3,8 @@ import csv
 from logging import getLogger
 import requests
 from sqlite3 import connect
-from typing import IO, Optional
-from zlib import decompressobj, MAX_WBITS, _Decompress
+from typing import Any, IO, Optional
+from zlib import decompressobj, MAX_WBITS
 
 from . import common
 
@@ -44,7 +44,7 @@ class unzipped:
 
     def __init__(self, zstream: IO[bytes]) -> None:
         self.zstream = zstream
-        self.decoder: Optional[_Decompress] = decompressobj(16 + MAX_WBITS)
+        self.decoder: Optional[Any] = decompressobj(16 + MAX_WBITS)
         self.outdata = b""
         self.line = b""
 
