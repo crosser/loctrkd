@@ -2,7 +2,7 @@
 
 from random import Random
 from socket import getaddrinfo, socket, AF_INET, SOCK_STREAM
-from sqlite3 import connect, Row
+from sqlite3 import connect
 from time import sleep
 from typing import Any
 import unittest
@@ -38,7 +38,6 @@ class Storage(TestWithServers):
         sleep(1)
         got = set()
         with connect(self.conf.get("storage", "dbfn")) as db:
-            db.row_factory = Row
             for is_incoming, packet in db.execute(
                 "select is_incoming, packet from events"
             ):

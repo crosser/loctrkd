@@ -2,6 +2,7 @@
 
 from configparser import ConfigParser, SectionProxy
 from contextlib import closing, ExitStack
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from importlib import import_module
 from multiprocessing import Process
 from os import kill, unlink
@@ -15,6 +16,7 @@ from socket import (
     socket,
     SocketType,
 )
+from sys import exit
 from tempfile import mkstemp
 from time import sleep
 from typing import Optional
@@ -44,6 +46,7 @@ class TestWithServers(TestCase):
         }
         self.conf["opencellid"] = {
             "dbfn": self.tmpfilebase + ".opencellid.sqlite",
+            "downloadurl": f"http://localhost:{freeports[2]}/test/262.csv.gz",
         }
         self.conf["lookaside"] = {
             "backend": "opencellid",
@@ -62,7 +65,18 @@ class TestWithServers(TestCase):
             p.start()
             self.children.append((srvname, p))
         if httpd:
-            pass
+            server = HTTPServer(("", freeports[2]), SimpleHTTPRequestHandler)
+
+            def run(server):
+                try:
+                    server.serve_forever()
+                except KeyboardInterrupt:
+                    # TODO: this still leaves unclosed socket in the server
+                    server.shutdown()
+
+            p = Process(target=run, args=(server,))
+            p.start()
+            self.children.append(("httpd", p))
         sleep(1)
 
     def tearDown(self) -> None:
