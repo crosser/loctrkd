@@ -67,7 +67,7 @@ class TestWithServers(TestCase):
         if httpd:
             server = HTTPServer(("", freeports[2]), SimpleHTTPRequestHandler)
 
-            def run(server):
+            def run(server: HTTPServer) -> None:
                 try:
                     server.serve_forever()
                 except KeyboardInterrupt:
