@@ -1,7 +1,7 @@
 """ Send junk to the collector """
 
 from random import Random
-from socket import getaddrinfo, socket, AF_INET6, SOCK_STREAM
+from socket import getaddrinfo, socket, AF_INET, SOCK_STREAM
 from time import sleep
 import unittest
 from .common import send_and_drain, TestWithServers
@@ -14,13 +14,13 @@ class Fuzz(TestWithServers):
         super().setUp("collector")
         self.rnd = Random()
         for fam, typ, pro, cnm, skadr in getaddrinfo(
-            "::1",
+            "127.0.0.1",
             self.conf.getint("collector", "port"),
-            family=AF_INET6,
+            family=AF_INET,
             type=SOCK_STREAM,
         ):
             break  # Just take the first element
-        self.sock = socket(AF_INET6, SOCK_STREAM)
+        self.sock = socket(AF_INET, SOCK_STREAM)
         self.sock.connect(skadr)
 
     def tearDown(self) -> None:
