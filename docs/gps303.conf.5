@@ -1,0 +1,183 @@
+.TH GPS303.CONF 5 2022-05-27 "GPS303 Manipulation Tool" "File Formats Manual"
+
+.SH NAME
+
+gps303.conf \- Configuration file for GPS303 server
+
+.SH DESCRIPTION
+
+Services that consitute
+.BR gps303 (1)
+suite read configuration data from
+.B /etc/gps303\&.conf
+.PP
+The file in
+.B .ini
+format contains several service\&-specific sections and optional
+device\&-specific sections.
+.TP
+.B [collector]
+\- defines interface points of the
+.B collector
+daemon.
+.TP
+.B [wsgateway]
+\- defines websockets listen port and optionally the location of the
+.B .html
+file to serve when a non-websocket request is received.
+.TP
+.B [storage]
+\- defines location of
+.BR sqlite3 (1)
+database file where events are stored.
+.TP
+.B [lookaside]
+\- defines which backend will be used.
+.TP
+.B [opencellid]
+\- defines location of
+.BR sqlite3 (1)
+database file with cell tower coordinates and how to download it.
+.TP
+.B [googlemaps]
+\- defines the location of google API access token.
+.TP
+.BR [termconfig] " and sections titled after terminals' IMEIs
+\- defines parameters to be sent to configure the terminals.
+.PP
+Section contain the following parameters:
+.SS [collector]
+.TP
+.B port
+(integer) \- TCP port to listen for terminal connections. Default
+.BR 4303 .
+.TP
+.B publishurl
+(string) \- Zeromq "pub" socket where events are published. Default
+.BR ipc:///var/lib/gps303/collected .
+.TP
+.B listenurl
+(string) \- Zeromq "pull" socket for messages to be sent to the terminal.
+Default
+.BR ipc:///var/lib/gps303/responses .
+.SS [wsgateway]
+.TP
+.B port
+(integer) \- TCP port to listen for websocket connections. Default
+.BR 5049 .
+.TP
+.B htmlfile
+(string) \- path to the
+.B .html
+file to be served for
+.IR non "-websocket requests. Default
+.BR /var/lib/gps303/index.html .
+.SS [storage]
+.TP
+.B dbfn
+(string) \- location of the database file where events are stored.
+.SS [lookaside]
+.TP
+.B backend
+(string) \- either
+.B opencellid
+or
+.B googlemaps
+to select which location service to use. Googlemaps is a realtime service,
+which means that you are sending location of your clients to Google.
+Opencellid resolves location against a local database of cell towers, that
+can be updated from time to time (e.g. once in a week or in a month).
+This source does not contain WiFi access point locations, and therefore
+may be less accurate. Default
+.BR opencellid .
+.SS [opencellid]
+.TP
+.B dbfn
+(string) \- location of the database file with cell tower locations.
+Default
+.BR /var/lib/opencellid/opencellid.sqlite .
+.TP
+.B downloadtoken
+(string) \- location of the file that contains opencellid authentication
+token. Default
+.BR /var/lib/opencellid/opencellid.token .
+.TP
+.B downloadmcc
+(number or string) \- MCC of the region, or string "all" for the whole world.
+Please set correct value for your country.
+.TP
+.B downloadurl
+(string) \- if specified, download the file (that must be
+.BR .csv.gz )
+from this URL instead of the official opencellid.org site.
+.B downloadtoken
+and
+.B downloadmcc
+are ignored when
+.B downloadurl
+is specified.
+.SS [termconfig] and sections with numeric name
+.TP
+.B statusIntervalMinutes
+(integer) \- terminal will report status this often. Default
+.BR 25 .
+.TP
+.B uploadIntervalSeconds
+(integer) \- terminal will report location this often. Default
+.BR 0x0300 .
+.TP
+.B binarySwitch
+(integer) \- see protocol description document. Note that all integer values
+can be specified in decimal, hexadecimal, octal, or binary base. Binary
+is useful for this value in particular. Default
+.BR 0b00110001 .
+.TP
+.B alarms
+(list of 3 elements) \- this value must be specified as three continuation
+lines, with time in HHMM (four digit) format.
+.TP
+.B dndTimeSwitch
+(0 or 1) \- enable or not enable "do not disturb" intervals. Default
+.BR 0 .
+.TP dndTimes
+(list of 3 elements) \- three continuation lines with time intervals
+in HHMMHHMM (start \- end) format.
+.TP
+.B gpsTimeSwitch
+(0 or 1) \- enable or not enable location upload time interval.
+.TP
+.B gpsTimeStart
+(HHMM) \- start of the interval to upload locations.
+.TP
+.B gpsTimeStop
+(HHMM) \- end of the interval to upload locations.
+.TP
+.B phoneNumbers
+(list of three elements) \- three
+.I strings in quotes
+as three continuation lines, with three phone numbers that the terminal
+will use for various reports and calls.
+
+.PP
+.B [termconfig]
+section is used as a default fallback for terminals that have no section
+in the configuration file named according to their IMEI.
+
+.SH KNOWN BUGS
+
+Keeping configuration for the terminals in this file is suboptimal,
+and is suitable only for very small installations with one or few
+served tracker terminals.
+
+.SH COPYRIGHT
+
+The program is copyrighted by Eugene G. Crosser <crosser@average.org>
+and freely distributable under the terms of MIT license.
+
+.SH CREDITS
+
+The program is inspired by the project petGPS by Thomas Obadia
+
+.SH SEE ALSO
+
+.BR gps303 (1)
