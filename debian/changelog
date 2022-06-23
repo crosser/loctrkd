@@ -1,3 +1,12 @@
+gps303 (1.00) experimental; urgency=medium
+
+  * test: include lookaside and termconfig in the loop
+  * doc: edit and correct README.md
+  * docs: expand man pages
+  * forgotten manpage for install
+
+ -- Eugene Crosser <crosser@average.org>  Thu, 23 Jun 2022 22:58:35 +0200
+
 gps303 (0.99) experimental; urgency=medium
 
   * Revive mkgpx example script
