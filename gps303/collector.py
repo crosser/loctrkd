@@ -19,7 +19,6 @@ import zmq
 from . import common
 from .gps303proto import (
     GPS303Conn,
-    StreamError,
     HIBERNATION,
     LOGIN,
     inline_response,
@@ -69,16 +68,18 @@ class Client:
             )
             return None
         when = time()
-        while True:
-            try:
-                return [
-                    (when, self.addr, packet)
-                    for packet in self.stream.recv(segment)
-                ]
-            except StreamError as e:
+        msgs = []
+        for elem in self.stream.recv(segment):
+            if isinstance(elem, bytes):
+                msgs.append((when, self.addr, elem))
+            else:
                 log.warning(
-                    "%s from fd %d (IMEI %s)", e, self.sock.fileno(), self.imei
+                    "%s from fd %d (IMEI %s)",
+                    elem,
+                    self.sock.fileno(),
+                    self.imei,
                 )
+        return msgs
 
     def send(self, buffer: bytes) -> None:
         try:

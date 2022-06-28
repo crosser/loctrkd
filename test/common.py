@@ -87,7 +87,7 @@ class TestWithServers(TestCase):
             self.assertEqual(
                 p.exitcode,
                 0,
-                srvname + " terminated with non-zero return code",
+                f"{srvname} terminated with return code {p.exitcode}",
             )
         for sfx in (
             "",
