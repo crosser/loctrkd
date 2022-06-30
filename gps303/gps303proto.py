@@ -879,6 +879,18 @@ def proto_of_message(packet: bytes) -> int:
     return packet[1]
 
 
+def imei_from_packet(packet: bytes) -> Optional[str]:
+    if proto_of_message(packet) == LOGIN.PROTO:
+        msg = parse_message(packet)
+        if isinstance(msg, LOGIN):
+            return msg.imei
+    return None
+
+
+def is_goodbye_packet(packet: bytes) -> bool:
+    return proto_of_message(packet) == HIBERNATION.PROTO
+
+
 def inline_response(packet: bytes) -> Optional[bytes]:
     proto = proto_of_message(packet)
     if proto in CLASSES:
