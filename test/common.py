@@ -4,6 +4,7 @@ from configparser import ConfigParser, SectionProxy
 from contextlib import closing, ExitStack
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from importlib import import_module
+from logging import DEBUG, StreamHandler
 from multiprocessing import Process
 from os import kill, unlink
 from signal import SIGINT
@@ -16,7 +17,7 @@ from socket import (
     socket,
     SocketType,
 )
-from sys import exit
+from sys import exit, stderr
 from tempfile import mkstemp
 from time import sleep
 from typing import Optional
@@ -26,7 +27,9 @@ NUMPORTS = 3
 
 
 class TestWithServers(TestCase):
-    def setUp(self, *args: str, httpd: bool = False) -> None:
+    def setUp(
+        self, *args: str, httpd: bool = False, verbose: bool = False
+    ) -> None:
         freeports = []
         with ExitStack() as stack:
             for _ in range(NUMPORTS):
@@ -40,6 +43,7 @@ class TestWithServers(TestCase):
             "port": str(freeports[0]),
             "publishurl": "ipc://" + self.tmpfilebase + ".pub",
             "listenurl": "ipc://" + self.tmpfilebase + ".pul",
+            "protocols": "gps303proto",
         }
         self.conf["storage"] = {
             "dbfn": self.tmpfilebase + ".storage.sqlite",
@@ -61,6 +65,9 @@ class TestWithServers(TestCase):
             else:
                 kwargs = {}
             cls = import_module("gps303." + srvname, package=".")
+            if verbose:
+                cls.log.addHandler(StreamHandler(stderr))
+                cls.log.setLevel(DEBUG)
             p = Process(target=cls.runserver, args=(self.conf,), kwargs=kwargs)
             p.start()
             self.children.append((srvname, p))

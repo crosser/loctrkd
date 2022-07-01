@@ -32,10 +32,11 @@ from typing import (
 )
 
 __all__ = (
-    "GPS303Conn",
+    "Stream",
     "class_by_prefix",
     "inline_response",
     "parse_message",
+    "probe_buffer",
     "proto_by_name",
     "DecodeError",
     "Respond",
@@ -84,7 +85,7 @@ __all__ = (
 MAXBUFFER: int = 4096
 
 
-class GPS303Conn:
+class Stream:
     def __init__(self) -> None:
         self.buffer = b""
 
@@ -898,6 +899,15 @@ def inline_response(packet: bytes) -> Optional[bytes]:
         if cls.RESPOND is Respond.INL:
             return cls.Out().packed
     return None
+
+
+def probe_buffer(buffer: bytes) -> bool:
+    framestart = buffer.find(b"xx")
+    if framestart < 0:
+        return False
+    if len(buffer) - framestart < 6:
+        return False
+    return True
 
 
 def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
