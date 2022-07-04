@@ -87,7 +87,9 @@ class Client:
         else:
             rest = b""
         if rest:
-            log.warning("%d bytes in buffer on close: %s", len(rest), rest)
+            log.warning(
+                "%d bytes in buffer on close: %s", len(rest), rest[:64].hex()
+            )
 
     def recv(self) -> Optional[List[Tuple[float, Tuple[str, int], bytes]]]:
         """Read from the socket and parse complete messages"""
