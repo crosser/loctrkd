@@ -12,7 +12,7 @@ SCHEMA = """create table if not exists events (
     imei text,
     peeraddr text not null,
     is_incoming int not null default TRUE,
-    proto int not null,
+    proto text not null,
     packet blob
 )"""
 
@@ -38,7 +38,7 @@ def stow(**kwargs: Any) -> None:
             ("peeraddr", None),
             ("when", 0.0),
             ("imei", None),
-            ("proto", -1),
+            ("proto", "UNKNOWN"),
             ("packet", b""),
         )
     }
@@ -55,7 +55,7 @@ def stow(**kwargs: Any) -> None:
 
 
 def fetch(
-    imei: str, matchlist: List[Tuple[bool, int]], backlog: int
+    imei: str, matchlist: List[Tuple[bool, str]], backlog: int
 ) -> List[Tuple[bool, float, bytes]]:
     # matchlist is a list of tuples (is_incoming, proto)
     # returns a list of tuples (is_incoming, timestamp, packet)

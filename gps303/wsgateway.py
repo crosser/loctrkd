@@ -27,6 +27,7 @@ from .gps303proto import (
     STATUS,
     WIFI_POSITIONING,
     parse_message,
+    proto_name,
 )
 from .zmsg import Bcast, topic
 
@@ -38,7 +39,10 @@ def backlog(imei: str, numback: int) -> List[Dict[str, Any]]:
     result = []
     for is_incoming, timestamp, packet in fetch(
         imei,
-        [(True, GPS_POSITIONING.PROTO), (False, WIFI_POSITIONING.PROTO)],
+        [
+            (True, proto_name(GPS_POSITIONING)),
+            (False, proto_name(WIFI_POSITIONING)),
+        ],
         numback,
     ):
         msg = parse_message(packet, is_incoming=is_incoming)
@@ -282,28 +286,28 @@ def runserver(conf: ConfigParser) -> None:
             for imei in neededsubs - activesubs:
                 zsub.setsockopt(
                     zmq.SUBSCRIBE,
-                    topic(GPS_POSITIONING.PROTO, True, imei),
+                    topic(proto_name(GPS_POSITIONING), True, imei),
                 )
                 zsub.setsockopt(
                     zmq.SUBSCRIBE,
-                    topic(WIFI_POSITIONING.PROTO, False, imei),
+                    topic(proto_name(WIFI_POSITIONING), False, imei),
                 )
                 zsub.setsockopt(
                     zmq.SUBSCRIBE,
-                    topic(STATUS.PROTO, True, imei),
+                    topic(proto_name(STATUS), True, imei),
                 )
             for imei in activesubs - neededsubs:
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
-                    topic(GPS_POSITIONING.PROTO, True, imei),
+                    topic(proto_name(GPS_POSITIONING), True, imei),
                 )
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
-                    topic(WIFI_POSITIONING.PROTO, False, imei),
+                    topic(proto_name(WIFI_POSITIONING), False, imei),
                 )
                 zsub.setsockopt(
                     zmq.UNSUBSCRIBE,
-                    topic(STATUS.PROTO, True, imei),
+                    topic(proto_name(STATUS), True, imei),
                 )
             activesubs = neededsubs
             log.debug("Subscribed to: %s", activesubs)

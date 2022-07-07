@@ -58,7 +58,7 @@ if __name__.endswith("__main__"):
     c.execute(
         """select tstamp, packet from events
             where proto in (?, ?)""",
-        (WIFI_POSITIONING.PROTO, WIFI_OFFLINE_POSITIONING.PROTO),
+        (proto_name(WIFI_POSITIONING), proto_name(WIFI_OFFLINE_POSITIONING)),
     )
     init({"googlemaps": {"accesstoken": sys.argv[2]}})
     count = 0

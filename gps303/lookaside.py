@@ -9,7 +9,7 @@ from struct import pack
 import zmq
 
 from . import common
-from .gps303proto import parse_message, WIFI_POSITIONING
+from .gps303proto import parse_message, proto_name, WIFI_POSITIONING
 from .zmsg import Bcast, Resp, topic
 
 log = getLogger("gps303/lookaside")
@@ -22,7 +22,7 @@ def runserver(conf: ConfigParser) -> None:
     zctx = zmq.Context()  # type: ignore
     zsub = zctx.socket(zmq.SUB)  # type: ignore
     zsub.connect(conf.get("collector", "publishurl"))
-    zsub.setsockopt(zmq.SUBSCRIBE, topic(WIFI_POSITIONING.PROTO))
+    zsub.setsockopt(zmq.SUBSCRIBE, topic(proto_name(WIFI_POSITIONING)))
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
 

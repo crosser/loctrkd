@@ -18,7 +18,7 @@ c.execute(
        and ((is_incoming = false and proto = ?) 
          or (is_incoming = true and proto = ?))
        order by tstamp""",
-    (sys.argv[2], WIFI_POSITIONING.PROTO, GPS_POSITIONING.PROTO),
+    (sys.argv[2], proto_name(WIFI_POSITIONING), proto_name(GPS_POSITIONING)),
 )
 
 print(

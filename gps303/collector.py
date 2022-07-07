@@ -58,7 +58,7 @@ class ProtoModule:
         ...
 
     @staticmethod
-    def proto_of_message(packet: bytes) -> int:
+    def proto_of_message(packet: bytes) -> str:
         ...
 
     @staticmethod

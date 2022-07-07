@@ -38,6 +38,7 @@ __all__ = (
     "parse_message",
     "probe_buffer",
     "proto_by_name",
+    "proto_name",
     "DecodeError",
     "Respond",
     "GPS303Pkt",
@@ -79,6 +80,8 @@ __all__ = (
     "SOS_ALARM",
     "UNKNOWN_B3",
 )
+
+PROTO_PREFIX = "ZX"
 
 ### Deframer ###
 
@@ -872,16 +875,28 @@ def class_by_prefix(
     return CLASSES[proto]
 
 
+def proto_name(obj: Union[MetaPkt, GPS303Pkt]) -> str:
+    return (
+        PROTO_PREFIX
+        + ":"
+        + (
+            obj.__class__.__name__
+            if isinstance(obj, GPS303Pkt)
+            else obj.__name__
+        )
+    ).ljust(16, "\0")[:16]
+
+
 def proto_by_name(name: str) -> int:
     return PROTOS.get(name, -1)
 
 
-def proto_of_message(packet: bytes) -> int:
-    return packet[1]
+def proto_of_message(packet: bytes) -> str:
+    return proto_name(CLASSES.get(packet[1], UNKNOWN))
 
 
 def imei_from_packet(packet: bytes) -> Optional[str]:
-    if proto_of_message(packet) == LOGIN.PROTO:
+    if packet[1] == LOGIN.PROTO:
         msg = parse_message(packet)
         if isinstance(msg, LOGIN):
             return msg.imei
@@ -889,11 +904,11 @@ def imei_from_packet(packet: bytes) -> Optional[str]:
 
 
 def is_goodbye_packet(packet: bytes) -> bool:
-    return proto_of_message(packet) == HIBERNATION.PROTO
+    return packet[1] == HIBERNATION.PROTO
 
 
 def inline_response(packet: bytes) -> Optional[bytes]:
-    proto = proto_of_message(packet)
+    proto = packet[1]
     if proto in CLASSES:
         cls = CLASSES[proto]
         if cls.RESPOND is Respond.INL:

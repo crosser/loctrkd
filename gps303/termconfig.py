@@ -19,9 +19,9 @@ def runserver(conf: ConfigParser) -> None:
     zsub = zctx.socket(zmq.SUB)  # type: ignore
     zsub.connect(conf.get("collector", "publishurl"))
     for proto in (
-        STATUS.PROTO,
-        SETUP.PROTO,
-        POSITION_UPLOAD_INTERVAL.PROTO,
+        proto_name(STATUS),
+        proto_name(SETUP),
+        proto_name(POSITION_UPLOAD_INTERVAL),
     ):
         zsub.setsockopt(zmq.SUBSCRIBE, topic(proto))
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
