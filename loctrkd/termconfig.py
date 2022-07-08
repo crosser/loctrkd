@@ -10,7 +10,7 @@ from . import common
 from .zx303proto import *
 from .zmsg import Bcast, Resp, topic
 
-log = getLogger("gps303/termconfig")
+log = getLogger("loctrkd/termconfig")
 
 
 def runserver(conf: ConfigParser) -> None:

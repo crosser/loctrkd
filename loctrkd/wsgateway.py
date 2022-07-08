@@ -31,7 +31,7 @@ from .zx303proto import (
 )
 from .zmsg import Bcast, topic
 
-log = getLogger("gps303/wsgateway")
+log = getLogger("loctrkd/wsgateway")
 htmlfile = None
 
 

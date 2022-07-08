@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-export PYBUILD_NAME=gps303
+export PYBUILD_NAME=loctrkd
 #export PYBUILD_BEFORE_TEST=cp -r mypystubs {build_dir}
 #export PYBUILD_AFTER_TEST=rm -rf {build_dir}/mypystubs
 
@@ -9,10 +9,10 @@ export PYBUILD_NAME=gps303
 
 
 override_dh_installsystemd:
-	dh_installsystemd --name=gps303
-	dh_installsystemd --name=gps303.collector
-	dh_installsystemd --name=gps303.storage
-	dh_installsystemd --name=gps303.lookaside
-	dh_installsystemd --name=gps303.termconfig
-	dh_installsystemd --name=gps303.wsgateway
-	dh_installsystemd --name=gps303.ocid-dload
+	dh_installsystemd --name=loctrkd
+	dh_installsystemd --name=loctrkd.collector
+	dh_installsystemd --name=loctrkd.storage
+	dh_installsystemd --name=loctrkd.lookaside
+	dh_installsystemd --name=loctrkd.termconfig
+	dh_installsystemd --name=loctrkd.wsgateway
+	dh_installsystemd --name=loctrkd.ocid-dload

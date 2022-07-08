@@ -19,7 +19,7 @@ class TypeCheck(TestCase):
             "mypy",
             "--strict",
             "--ignore-missing-imports",
-            "gps303",
+            "loctrkd",
             "test",
         ]
         self.assertEqual(call(cmd), 0, "mypy typecheck")

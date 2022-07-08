@@ -8,7 +8,7 @@ from zlib import decompressobj, MAX_WBITS
 
 from . import common
 
-log = getLogger("gps303/ocid_dload")
+log = getLogger("loctrkd/ocid_dload")
 
 RURL = (
     "https://opencellid.org/ocid/downloads"

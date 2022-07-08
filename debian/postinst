@@ -1,8 +1,8 @@
 #!/bin/sh
 
 set -e
-adduser --system --group --home /var/lib/gps303 gps303
-install --owner gps303 --group gps303 --directory /var/lib/opencellid
+adduser --system --group --home /var/lib/loctrkd loctrkd
+install --owner loctrkd --group loctrkd --directory /var/lib/opencellid
 
 #DEBHELPER#
 

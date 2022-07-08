@@ -2,11 +2,11 @@
 
 .SH NAME
 
-gps303 \- utility to send control messages to the GPS tracker terminal
+loctrkd \- utility to send control messages to the GPS tracker terminal
 
 .SH SYNOPSIS
 
-gps303 [-c /path/to/config/file] [-d]
+loctrkd [-c /path/to/config/file] [-d]
 
 .SH DESCRIPTION
 
@@ -22,7 +22,7 @@ Set "debug" level of logging
 
 .TP 0.5i
 .B -c /path/to/config
-Location of the configuration file (default /etc/gps303.conf)
+Location of the configuration file (default /etc/loctrkd.conf)
 
 .SH COMMANDS
 
@@ -30,7 +30,7 @@ After the options, IMEI (16 decimal characters) and the command verb
 must be specified, optionally followed by a list of
 .B key=value
 pairs. The command verb is a case insensitive abbreviation that
-uniquely identifies a class from the file gps303/gps303proto.py.
+uniquely identifies a class from the file loctrkd/loctrkdproto.py.
 These classes correspond to message types recognized by the terminal.
 Only a few of them are useful to construct "unsolicited replies".
 .B key=value
@@ -56,4 +56,4 @@ The program is inspired by the project petGPS by Thomas Obadia
 
 .SH SEE ALSO
 
-.BR gps303.conf (5)
+.BR loctrkd.conf (5)

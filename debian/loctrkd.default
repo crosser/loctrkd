@@ -1,5 +1,5 @@
-# Environment for gps303 suite
+# Environment for loctrkd suite
 # Common command-line option for all daemons
-#OPTIONS="-c /etc/gps303.conf -d"
+#OPTIONS="-c /etc/loctrkd.conf -d"
 # Which lookaside service to use: opencellid or googleloc
 LOOKASIDE=opencellid

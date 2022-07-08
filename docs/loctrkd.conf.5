@@ -2,14 +2,14 @@
 
 .SH NAME
 
-gps303.conf \- Configuration file for GPS303 server
+loctrkd.conf \- Configuration file for GPS303 server
 
 .SH DESCRIPTION
 
 Services that consitute
-.BR gps303 (1)
+.BR loctrkd (1)
 suite read configuration data from
-.B /etc/gps303\&.conf
+.B /etc/loctrkd\&.conf
 .PP
 The file in
 .B .ini
@@ -54,12 +54,12 @@ Section contain the following parameters:
 .TP
 .B publishurl
 (string) \- Zeromq "pub" socket where events are published. Default
-.BR ipc:///var/lib/gps303/collected .
+.BR ipc:///var/lib/loctrkd/collected .
 .TP
 .B listenurl
 (string) \- Zeromq "pull" socket for messages to be sent to the terminal.
 Default
-.BR ipc:///var/lib/gps303/responses .
+.BR ipc:///var/lib/loctrkd/responses .
 .SS [wsgateway]
 .TP
 .B port
@@ -71,7 +71,7 @@ Default
 .B .html
 file to be served for
 .IR non "-websocket requests. Default
-.BR /var/lib/gps303/index.html .
+.BR /var/lib/loctrkd/index.html .
 .SS [storage]
 .TP
 .B dbfn
@@ -180,4 +180,4 @@ The program is inspired by the project petGPS by Thomas Obadia
 
 .SH SEE ALSO
 
-.BR gps303 (1)
+.BR loctrkd (1)

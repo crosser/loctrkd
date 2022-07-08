@@ -5,7 +5,7 @@ from time import sleep
 from typing import Any
 import unittest
 from .common import send_and_drain, TestWithServers
-from gps303 import ocid_dload
+from loctrkd import ocid_dload
 
 
 class Ocid_Dload(TestWithServers):

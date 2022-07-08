@@ -20,7 +20,7 @@ import zmq
 from . import common
 from .zmsg import Bcast, Resp
 
-log = getLogger("gps303/collector")
+log = getLogger("loctrkd/collector")
 
 MAXBUFFER: int = 4096
 

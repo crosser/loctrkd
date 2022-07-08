@@ -9,7 +9,7 @@ from . import common
 from .zx303proto import parse_message
 from .zmsg import Bcast
 
-log = getLogger("gps303/watch")
+log = getLogger("loctrkd/watch")
 
 
 def runserver(conf: ConfigParser) -> None:

@@ -1,0 +1,17 @@
+[Unit]
+Description=GPS303 Lookaside Service
+PartOf=loctrkd.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/loctrkd
+ExecStart=python3 -m loctrkd.lookaside $OPTIONS
+KillSignal=INT
+Restart=on-failure
+StandardOutput=journal
+StandardError=inherit
+User=loctrkd
+Group=loctrkd
+
+[Install]
+WantedBy=loctrkd.target

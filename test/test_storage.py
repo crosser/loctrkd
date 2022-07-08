@@ -7,8 +7,8 @@ from time import sleep
 from typing import Any
 import unittest
 from .common import send_and_drain, TestWithServers
-from gps303.zx303proto import *
-from gps303.ocid_dload import SCHEMA
+from loctrkd.zx303proto import *
+from loctrkd.ocid_dload import SCHEMA
 
 
 class Storage(TestWithServers):

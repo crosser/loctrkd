@@ -1,4 +1,4 @@
-gps303 (1.02) experimental; urgency=medium
+loctrkd (1.02) experimental; urgency=medium
 
   * collector: prevent two active clients share IMEI
 
@@ -19,7 +19,7 @@ gps303 (1.00) experimental; urgency=medium
 
  -- Eugene Crosser <crosser@average.org>  Thu, 23 Jun 2022 22:58:35 +0200
 
-gps303 (0.99) experimental; urgency=medium
+loctrkd (0.99) experimental; urgency=medium
 
   * Revive mkgpx example script
   * Drop data if we are receiving junk
@@ -41,7 +41,7 @@ gps303 (0.99) experimental; urgency=medium
 
  -- Eugene Crosser <crosser@average.org>  Wed, 22 Jun 2022 18:04:10 +0200
 
-gps303 (0.98) experimental; urgency=medium
+loctrkd (0.98) experimental; urgency=medium
 
   * include runtime deps as build-time for typecheck
   * fix l3str/l3int breakage provoked by typeckeck
@@ -54,19 +54,19 @@ gps303 (0.98) experimental; urgency=medium
 
  -- Eugene Crosser <crosser@average.org>  Tue, 07 Jun 2022 00:17:55 +0200
 
-gps303 (0.97) experimental; urgency=medium
+loctrkd (0.97) experimental; urgency=medium
 
   * adjust tests
   * typecheck: skip test if mypy verison < 0.942
 
  -- Eugene Crosser <crosser@average.org>  Tue, 31 May 2022 01:05:39 +0200
 
-gps303 (0.96) experimental; urgency=medium
+loctrkd (0.96) experimental; urgency=medium
 
   * Do not write startup message for command-line cmds
   * Add a (short) man page
   * typing: make zmsg.py typecheck
-  * typing: annotate gps303proto.py (mostly)
+  * typing: annotate loctrkdproto.py (mostly)
   * typechecking: less hacky deal with dynamic attrs
   * typing: annotate opencellid.py
   * typchecking: annotate googlemaps.py
@@ -78,20 +78,20 @@ gps303 (0.96) experimental; urgency=medium
   * typeckecking: annotate storage.py
   * typing: annotate lookaside.py
   * typechecking: annotate collector.py
-  * typeckeck: annotate __main__ and fix gps303proto
+  * typeckeck: annotate __main__ and fix loctrkdproto
   * typeckecking: annotate wsgateway.py
   * formatting: revive black formatting
   * unittest: type checking and formatting
 
  -- Eugene Crosser <crosser@average.org>  Tue, 31 May 2022 00:36:33 +0200
 
-gps303 (0.95) experimental; urgency=medium
+loctrkd (0.95) experimental; urgency=medium
 
   * Quick fix for a missing variable
 
  -- Eugene Crosser <crosser@average.org>  Thu, 26 May 2022 19:32:44 +0200
 
-gps303 (0.94) experimental; urgency=medium
+loctrkd (0.94) experimental; urgency=medium
 
   * Opencellid download service
   * Improve error handling of the downloader
@@ -101,7 +101,7 @@ gps303 (0.94) experimental; urgency=medium
 
  -- Eugene Crosser <crosser@average.org>  Thu, 26 May 2022 19:25:40 +0200
 
-gps303 (0.93) experimental; urgency=medium
+loctrkd (0.93) experimental; urgency=medium
 
   * use fixed github action
   * try to make github actions work
@@ -113,7 +113,7 @@ gps303 (0.93) experimental; urgency=medium
 
  -- Eugene Crosser <crosser@average.org>  Tue, 24 May 2022 22:53:13 +0200
 
-gps303 (0.92) experimental; urgency=low
+loctrkd (0.92) experimental; urgency=low
 
   [ Eugene Crosser ]
   * "When you start a pattern with *, you must use quotes."
@@ -125,14 +125,14 @@ gps303 (0.92) experimental; urgency=low
 
  -- Eugene Crosser <crosser@average.org>  Mon, 23 May 2022 23:55:46 +0200
 
-gps303 (0.91) experimental; urgency=low
+loctrkd (0.91) experimental; urgency=low
 
   [ Eugene Crosser ]
   * fix log message using unknown variable
 
  -- Eugene Crosser <crosser@average.org>  Tue, 10 May 2022 09:42:30 +0200
 
-gps303 (0.90) experimental; urgency=low
+loctrkd (0.90) experimental; urgency=low
 
   [ Eugene Crosser ]
   * Expand README
@@ -150,7 +150,7 @@ gps303 (0.90) experimental; urgency=low
 
  -- Eugene Crosser <crosser@average.org>  Tue, 10 May 2022 09:09:08 +0200
 
-gps303 (0.01) experimental; urgency=low
+loctrkd (0.01) experimental; urgency=low
 
   [ Eugene Crosser ]
   * adjust debianization to wsgateway
@@ -181,7 +181,7 @@ gps303 (0.01) experimental; urgency=low
   * update gitignore debianization
   * debianize
   * add command line script
-  * cleanup of gps303proto
+  * cleanup of loctrkdproto
   * update mkgpx to the new api
   * export all classes
   * remove forgotten make_packet() call
@@ -211,7 +211,7 @@ gps303 (0.01) experimental; urgency=low
   * initial storage service
   * make collector.py work
   * WIP to reorganise to microservices
-  * rename protocol module to "gps303proto"
+  * rename protocol module to "loctrkdproto"
   * Initial version of zmq based architecture
   * drop unresolvable points in mkgpx
   * add lookaside module and opencellid lookup

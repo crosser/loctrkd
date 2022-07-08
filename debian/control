@@ -1,10 +1,10 @@
-Source: gps303
+Source: loctrkd
 Maintainer: Eugene Crosser <crosser@average.org>
 Section: misc
 Priority: optional
 Standards-Version: 4.5.1
 X-Python-Version: >= 3.6
-Homepage: http://www.average.org/gps303
+Homepage: http://www.average.org/loctrkd
 Build-Depends: black,
                debhelper-compat (= 12),
                dh-python,
@@ -15,7 +15,7 @@ Build-Depends: black,
                python3-wsproto,
                python3-zmq,
 
-Package: python3-gps303
+Package: python3-loctrkd
 Architecture: all
 Section: python
 Depends: adduser,

@@ -64,7 +64,7 @@ class TestWithServers(TestCase):
                 kwargs = {"handle_hibernate": False}
             else:
                 kwargs = {}
-            cls = import_module("gps303." + srvname, package=".")
+            cls = import_module("loctrkd." + srvname, package=".")
             if verbose:
                 cls.log.addHandler(StreamHandler(stderr))
                 cls.log.setLevel(DEBUG)

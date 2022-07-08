@@ -1,0 +1,12 @@
+[Unit]
+Description=GPS303 OpenCellID Download Service
+Wants=loctrkd.ocid-dload.timer
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/loctrkd
+ExecStart=python3 -m loctrkd.ocid_dload $OPTIONS
+StandardOutput=journal
+StandardError=inherit
+User=loctrkd
+Group=loctrkd

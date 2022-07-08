@@ -1,17 +1,17 @@
 [Unit]
 Description=GPS303 Websocket Gateway Service
-PartOf=gps303.target
+PartOf=loctrkd.target
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/default/gps303
-ExecStart=python3 -m gps303.wsgateway $OPTIONS
+EnvironmentFile=-/etc/default/loctrkd
+ExecStart=python3 -m loctrkd.wsgateway $OPTIONS
 KillSignal=INT
 Restart=on-failure
 StandardOutput=journal
 StandardError=inherit
-User=gps303
-Group=gps303
+User=loctrkd
+Group=loctrkd
 
 [Install]
-WantedBy=gps303.target
+WantedBy=loctrkd.target

@@ -1,7 +1,7 @@
 """ Example that produces gpx from events in evstore """
 
 # run as:
-# python -m gps303.mkgpx <sqlite-file> <IMEI>
+# python -m loctrkd.mkgpx <sqlite-file> <IMEI>
 # Generated gpx is emitted to stdout
 
 from datetime import datetime, timezone
@@ -24,7 +24,7 @@ c.execute(
 print(
     """<?xml version="1.0"?>
 <gpx version="1.1"
-creator="gps303"
+creator="loctrkd"
 xmlns="http://www.topografix.com/GPX/1/1">
   <name>Location Data</name>
   <trk>

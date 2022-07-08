@@ -1,9 +1,9 @@
 [Unit]
 Description=Timer For GPS303 OpenCellID Download Service
-Requires=gps303.ocid-dload.service
+Requires=loctrkd.ocid-dload.service
 
 [Timer]
-Unit=gps303.ocid-dload.service
+Unit=loctrkd.ocid-dload.service
 OnCalendar=Weekly
 
 [Install]

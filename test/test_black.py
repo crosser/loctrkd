@@ -21,7 +21,7 @@ class BlackFormatter(TestCase):
             self.fail(f"black not installed.")
         cmd = (
             ["black", "--check", "--diff", "-l", "79"]
-            + glob("gps303/**/*.py", recursive=True)
+            + glob("loctrkd/**/*.py", recursive=True)
             + glob("test/**/*.py", recursive=True)
         )
         output = run(cmd, capture_output=True)

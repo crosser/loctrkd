@@ -12,7 +12,7 @@ from . import common
 from .zx303proto import parse_message, proto_name, WIFI_POSITIONING
 from .zmsg import Bcast, Resp, topic
 
-log = getLogger("gps303/lookaside")
+log = getLogger("loctrkd/lookaside")
 
 
 def runserver(conf: ConfigParser) -> None:

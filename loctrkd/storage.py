@@ -10,7 +10,7 @@ from .evstore import initdb, stow
 from .zx303proto import proto_of_message
 from .zmsg import Bcast
 
-log = getLogger("gps303/storage")
+log = getLogger("loctrkd/storage")
 
 
 def runserver(conf: ConfigParser) -> None:

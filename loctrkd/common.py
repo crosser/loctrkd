@@ -8,12 +8,12 @@ from pkg_resources import get_distribution, DistributionNotFound
 from sys import argv, stderr, stdout
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-CONF = "/etc/gps303.conf"
+CONF = "/etc/loctrkd.conf"
 PORT = 4303
-DBFN = "/var/lib/gps303/gps303.sqlite"
+DBFN = "/var/lib/loctrkd/loctrkd.sqlite"
 
 try:
-    version = get_distribution("gps303").version
+    version = get_distribution("loctrkd").version
 except DistributionNotFound:
     version = "<local>"
 

@@ -13,7 +13,7 @@ from . import common
 from .zx303proto import *
 from .zmsg import Bcast, Resp
 
-log = getLogger("gps303")
+log = getLogger("loctrkd")
 
 
 def main(
