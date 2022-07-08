@@ -23,5 +23,7 @@ Depends: adduser,
          python3-zmq,
          ${misc:Depends},
          ${python3:Depends}
+Conflicts: python3-gps303
+Replaces: python3-gps303
 Description: Suite of modules to collect reports from xz303 GPS trackers
  Consists of collector, storagae, lookaside, and termconfig
