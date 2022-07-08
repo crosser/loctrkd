@@ -149,14 +149,14 @@ less accurate.
 
 Lookaside service can be configured to use either of the options by
 assigning `backend = opencellid` or `backend = googlemaps` in the
-configuration file (`/etc/gps303.conf` by default). Then, the path to
+configuration file (`/etc/loctrkd.conf` by default). Then, the path to
 the file with the auth token needs to be specified in the `[opencellid]`
 section or `[googlemaps]` section of the configuration file respectively.
 
 Note that in both cases, the value in the configuration file needs
 to _point to the file_ that contains the token, rather than contain
 the token itself. The file needs to be readable for the user under which
-services are executed. That is the user `gps303` if this software was
+services are executed. That is the user `loctrkd` if this software was
 installed as the Debian package.
 
 This part of setup cannot be automated, because each user needs to
@@ -176,6 +176,6 @@ owners of the terminals.
 
 ## Homepage and source
 
-Home page is [http://www.average.org/gps303/](http://www.average.org/gps303/)
-Get the source from the origin `git://git.average.org/gps303.git`
-or from [Github mirror](https://github.com/crosser/gps303).
+Home page is [http://www.average.org/loctrkd/](http://www.average.org/loctrkd/)
+Get the source from the origin `git://git.average.org/loctrkd.git`
+or from [Github mirror](https://github.com/crosser/loctrkd).
