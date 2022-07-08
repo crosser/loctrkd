@@ -15,7 +15,7 @@ Build-Depends: black,
                python3-wsproto,
                python3-zmq,
 
-Package: python3-loctrkd
+Package: loctrkd
 Architecture: all
 Section: python
 Depends: adduser,

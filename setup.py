@@ -10,7 +10,7 @@ with open("debian/changelog", "r") as clog:
 setup(
     name="loctrkd",
     version=version,
-    description="Suite of daemons to collect reports from xz303 GPS trackers",
+    description="Suite of daemons to collect reports from GPS trackers",
     url="http://www.average.org/loctrkd/",
     author="Eugene Crosser",
     author_email="crosser@average.org",
