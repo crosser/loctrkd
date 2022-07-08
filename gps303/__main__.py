@@ -10,7 +10,7 @@ from typing import List, Tuple
 import zmq
 
 from . import common
-from .gps303proto import *
+from .zx303proto import *
 from .zmsg import Bcast, Resp
 
 log = getLogger("gps303")

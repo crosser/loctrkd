@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlite3 import connect
 import sys
 
-from .gps303proto import parse_message, proto_by_name
+from .zx303proto import parse_message, proto_by_name
 
 db = connect(sys.argv[1])
 c = db.cursor()

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from sqlite3 import connect
 import sys
 
-from .gps303proto import *
+from .zx303proto import *
 
 db = connect(sys.argv[1])
 c = db.cursor()

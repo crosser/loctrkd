@@ -7,7 +7,7 @@ import zmq
 
 from . import common
 from .evstore import initdb, stow
-from .gps303proto import proto_of_message
+from .zx303proto import proto_of_message
 from .zmsg import Bcast
 
 log = getLogger("gps303/storage")

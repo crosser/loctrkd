@@ -43,7 +43,7 @@ class TestWithServers(TestCase):
             "port": str(freeports[0]),
             "publishurl": "ipc://" + self.tmpfilebase + ".pub",
             "listenurl": "ipc://" + self.tmpfilebase + ".pul",
-            "protocols": "gps303proto",
+            "protocols": "zx303proto",
         }
         self.conf["storage"] = {
             "dbfn": self.tmpfilebase + ".storage.sqlite",

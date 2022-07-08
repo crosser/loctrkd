@@ -6,7 +6,7 @@ from logging import getLogger
 import zmq
 
 from . import common
-from .gps303proto import parse_message
+from .zx303proto import parse_message
 from .zmsg import Bcast
 
 log = getLogger("gps303/watch")

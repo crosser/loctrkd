@@ -7,7 +7,7 @@ from struct import pack
 import zmq
 
 from . import common
-from .gps303proto import *
+from .zx303proto import *
 from .zmsg import Bcast, Resp, topic
 
 log = getLogger("gps303/termconfig")

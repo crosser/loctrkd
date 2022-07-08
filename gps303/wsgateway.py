@@ -22,7 +22,7 @@ import zmq
 
 from . import common
 from .evstore import initdb, fetch
-from .gps303proto import (
+from .zx303proto import (
     GPS_POSITIONING,
     STATUS,
     WIFI_POSITIONING,

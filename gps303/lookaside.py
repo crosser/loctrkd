@@ -9,7 +9,7 @@ from struct import pack
 import zmq
 
 from . import common
-from .gps303proto import parse_message, proto_name, WIFI_POSITIONING
+from .zx303proto import parse_message, proto_name, WIFI_POSITIONING
 from .zmsg import Bcast, Resp, topic
 
 log = getLogger("gps303/lookaside")

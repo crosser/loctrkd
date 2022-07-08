@@ -57,7 +57,7 @@ def lookup(
 if __name__.endswith("__main__"):
     from datetime import datetime, timezone
     import sys
-    from .gps303proto import *
+    from .zx303proto import *
 
     db = connect(sys.argv[1])
     c = db.cursor()
