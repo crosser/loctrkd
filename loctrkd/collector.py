@@ -28,7 +28,7 @@ MAXBUFFER: int = 4096
 class ProtoModule:
     class Stream:
         @staticmethod
-        def enframe(buffer: bytes) -> bytes:
+        def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
             ...
 
         def recv(self, segment: bytes) -> List[Union[bytes, str]]:
@@ -141,7 +141,7 @@ class Client:
     def send(self, buffer: bytes) -> None:
         assert self.stream is not None
         try:
-            self.sock.send(self.stream.enframe(buffer))
+            self.sock.send(self.stream.enframe(buffer, imei=self.imei))
         except OSError as e:
             log.error(
                 "Sending to fd %d (IMEI %s): %s",

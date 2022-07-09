@@ -131,7 +131,7 @@ class Bcast(_Zmsg):
     def decode(self, buffer: bytes) -> None:
         is_incoming, proto, imei, when = unpack("!B16s16sd", buffer[:41])
         self.is_incoming = bool(is_incoming)
-        self.proto = proto.decode()
+        self.proto = proto.decode().rstrip("\0")
         self.imei = (
             None if imei == b"0000000000000000" else imei.decode().strip("\0")
         )

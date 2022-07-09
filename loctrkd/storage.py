@@ -7,7 +7,6 @@ import zmq
 
 from . import common
 from .evstore import initdb, stow
-from .zx303proto import proto_of_message
 from .zmsg import Bcast
 
 log = getLogger("loctrkd/storage")
@@ -39,7 +38,7 @@ def runserver(conf: ConfigParser) -> None:
                 peeraddr=str(zmsg.peeraddr),
                 when=zmsg.when,
                 imei=zmsg.imei,
-                proto=proto_of_message(zmsg.packet),
+                proto=zmsg.proto,
                 packet=zmsg.packet,
             )
     except KeyboardInterrupt:

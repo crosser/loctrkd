@@ -81,7 +81,7 @@ __all__ = (
     "UNKNOWN_B3",
 )
 
-PROTO_PREFIX = "ZX"
+PROTO_PREFIX = "ZX:"
 
 ### Deframer ###
 
@@ -93,7 +93,7 @@ class Stream:
         self.buffer = b""
 
     @staticmethod
-    def enframe(buffer: bytes) -> bytes:
+    def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
         return b"xx" + buffer + b"\r\n"
 
     def recv(self, segment: bytes) -> List[Union[bytes, str]]:
@@ -876,15 +876,9 @@ def class_by_prefix(
 
 
 def proto_name(obj: Union[MetaPkt, GPS303Pkt]) -> str:
-    return (
-        PROTO_PREFIX
-        + ":"
-        + (
-            obj.__class__.__name__
-            if isinstance(obj, GPS303Pkt)
-            else obj.__name__
-        )
-    ).ljust(16, "\0")[:16]
+    return PROTO_PREFIX + (
+        obj.__class__.__name__ if isinstance(obj, GPS303Pkt) else obj.__name__
+    )
 
 
 def proto_by_name(name: str) -> int:
