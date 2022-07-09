@@ -92,10 +92,6 @@ class Stream:
     def __init__(self) -> None:
         self.buffer = b""
 
-    @staticmethod
-    def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
-        return b"xx" + buffer + b"\r\n"
-
     def recv(self, segment: bytes) -> List[Union[bytes, str]]:
         """
         Process next segment of the stream. Return successfully deframed
@@ -148,6 +144,10 @@ class Stream:
         ret = self.buffer
         self.buffer = b""
         return ret
+
+
+def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
+    return b"xx" + buffer + b"\r\n"
 
 
 ### Parser/Constructor ###
