@@ -14,7 +14,9 @@ log = getLogger("loctrkd/watch")
 
 
 class ProtoModule:
-    PROTO_PREFIX: str
+    @staticmethod
+    def proto_handled(proto: str) -> bool:
+        ...
 
     @staticmethod
     def parse_message(packet: bytes, is_incoming: bool = True) -> Any:
@@ -41,7 +43,7 @@ def runserver(conf: ConfigParser) -> None:
             zmsg = Bcast(zsub.recv())
             print("I" if zmsg.is_incoming else "O", zmsg.proto, zmsg.imei)
             for pmod in pmods:
-                if zmsg.proto.startswith(pmod.PROTO_PREFIX):
+                if pmod.proto_handled(zmsg.proto.startswith):
                     msg = pmod.parse_message(zmsg.packet, zmsg.is_incoming)
                     print(msg)
     except KeyboardInterrupt:

@@ -35,6 +35,7 @@ __all__ = (
     "Stream",
     "class_by_prefix",
     "inline_response",
+    "proto_handled",
     "parse_message",
     "probe_buffer",
     "proto_by_name",
@@ -873,6 +874,10 @@ def class_by_prefix(
         return lst
     _, proto = lst[0]
     return CLASSES[proto]
+
+
+def proto_handled(proto: str) -> bool:
+    return proto.startswith(PROTO_PREFIX)
 
 
 def proto_name(obj: Union[MetaPkt, GPS303Pkt]) -> str:
