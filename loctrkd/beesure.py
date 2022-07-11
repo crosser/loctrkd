@@ -351,11 +351,12 @@ class UD(BeeSurePkt):
         ) = args[:17]
         rest_args = args[17:]
         self.base_stations_number = int(rest_args[0])
+        # ???, mcc, net, (area, cell, strength)*
         self.base_stations = rest_args[1 : 4 + 3 * self.base_stations_number]
         rest_args = rest_args[3 + 3 * self.base_stations_number + 1 :]
         self.wifi_ap_number = int(rest_args[0])
-        self.wifi_ap = rest_args[1 : self.wifi_ap_number]
-        # rest_args = rest_args[self_wifi_ap_number+1:]
+        # (SSID, MAC, strength)*
+        self.wifi_ap = rest_args[1 : 1 + 3 * self.wifi_ap_number]
         self.positioning_accuracy = rest_args[-1]
 
 
