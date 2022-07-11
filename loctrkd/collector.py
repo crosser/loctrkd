@@ -61,10 +61,6 @@ class ProtoModule:
     def proto_of_message(packet: bytes) -> str:
         ...
 
-    @staticmethod
-    def proto_by_name(name: str) -> int:
-        ...
-
 
 pmods: List[ProtoModule] = []
 

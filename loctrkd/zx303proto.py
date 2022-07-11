@@ -38,7 +38,6 @@ __all__ = (
     "proto_handled",
     "parse_message",
     "probe_buffer",
-    "proto_by_name",
     "proto_name",
     "DecodeError",
     "Respond",
@@ -884,10 +883,6 @@ def proto_name(obj: Union[MetaPkt, GPS303Pkt]) -> str:
     return PROTO_PREFIX + (
         obj.__class__.__name__ if isinstance(obj, GPS303Pkt) else obj.__name__
     )
-
-
-def proto_by_name(name: str) -> int:
-    return PROTOS.get(name, -1)
 
 
 def proto_of_message(packet: bytes) -> str:
