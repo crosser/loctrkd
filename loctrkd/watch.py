@@ -43,7 +43,7 @@ def runserver(conf: ConfigParser) -> None:
             zmsg = Bcast(zsub.recv())
             print("I" if zmsg.is_incoming else "O", zmsg.proto, zmsg.imei)
             for pmod in pmods:
-                if pmod.proto_handled(zmsg.proto.startswith):
+                if pmod.proto_handled(zmsg.proto):
                     msg = pmod.parse_message(zmsg.packet, zmsg.is_incoming)
                     print(msg)
     except KeyboardInterrupt:
