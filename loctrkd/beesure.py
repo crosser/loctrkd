@@ -320,7 +320,10 @@ class LK(BeeSurePkt):
 
 class CONFIG(BeeSurePkt):
     PROTO = "CONFIG"
-    RESPOND = Respond.INL
+
+
+class ICCID(BeeSurePkt):
+    PROTO = "ICCID"
 
 
 class UD(BeeSurePkt):
