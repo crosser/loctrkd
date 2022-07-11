@@ -5,17 +5,24 @@ from subprocess import run
 from shutil import which
 from unittest import main, TestCase, skipUnless
 
-black_version = 0.0
+from . import no_less_than
+
+is_acceptable_verison = no_less_than("21.1")
+
+black_version = "0.0"
 try:
     vermatch = match("[\.\d]*", get_distribution("black").version)
     if vermatch is not None:
-        black_version = float(vermatch.group())
+        black_version = vermatch.group()
 except DistributionNotFound:
     pass
 
 
 class BlackFormatter(TestCase):
-    @skipUnless(black_version >= 21.1, "Do not trust earlier black versions")
+    @skipUnless(
+        is_acceptable_verison(black_version),
+        "Do not trust earlier black versions",
+    )
     def test_black(self) -> None:
         if not which("black"):
             self.fail(f"black not installed.")
