@@ -20,6 +20,7 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+from types import SimpleNamespace
 
 __all__ = (
     "Stream",
@@ -326,41 +327,73 @@ class ICCID(BeeSurePkt):
     PROTO = "ICCID"
 
 
-class UD(BeeSurePkt):
+class _LOC_DATA(BeeSurePkt):
+    def in_decode(self, *args: str) -> None:
+        p = SimpleNamespace()
+        _id = lambda x: x
+        for (obj, attr, func), val in zip(
+            (
+                (p, "verb", _id),
+                (p, "date", _id),
+                (p, "time", _id),
+                (self, "gps_valid", lambda x: x == "A"),
+                (p, "lat", float),
+                (p, "nors", lambda x: 1 if x == "N" else -1),
+                (p, "lon", float),
+                (p, "eorw", lambda x: 1 if x == "E" else -1),
+                (self, "speed", float),
+                (self, "direction", float),
+                (self, "altitude", float),
+                (self, "num_of_sats", int),
+                (self, "gsm_strength_percentage", int),
+                (self, "battery_percentage", int),
+                (self, "pedometer", int),
+                (self, "tubmling_times", int),
+                (self, "device_status", lambda x: int(x, 16)),
+                (self, "base_stations_number", int),
+                (self, "connect_base_station_number", int),
+                (self, "mcc", int),
+                (self, "mnc", int),
+            ),
+            args[:21],
+        ):
+            setattr(obj, attr, func(val))  # type: ignore
+        rest_args = args[21:]
+        # (area_id, cell_id, strength)*
+        self.base_stations = [
+            tuple(int(el) for el in rest_args[i * 3 : 3 + i * 3])
+            for i in range(self.base_stations_number)
+        ]
+        rest_args = rest_args[3 * self.base_stations_number :]
+        self.wifi_aps_number = int(rest_args[0])
+        # (SSID, MAC, strength)*
+        self.wifi_aps = [
+            (
+                rest_args[1 + i * 3],
+                rest_args[2 + i * 3],
+                int(rest_args[3 + i * 3]),
+            )
+            for i in range(self.wifi_aps_number)
+        ]
+        rest_args = rest_args[1 + 3 * self.wifi_aps_number :]
+        self.positioning_accuracy = float(rest_args[0])
+        self.devtime = (
+            datetime.strptime(
+                p.date + p.time,
+                "%d%m%y%H%M%S",
+            )
+            .replace(tzinfo=timezone.utc)
+            .astimezone(tz=timezone.utc)
+        )
+        self.latitude = p.lat * p.nors
+        self.longitude = p.lon * p.eorw
+
+
+class UD(_LOC_DATA):
     PROTO = "UD"
 
-    def in_decode(self, *args: str) -> None:
-        (
-            _,
-            self.date,
-            self.time,
-            self.gps_valid,
-            self.lat,
-            self.nors,
-            self.lon,
-            self.eorw,
-            self.speed,
-            self.direction,
-            self.altitude,
-            self.num_of_sats,
-            self.gsm_strength_percentage,
-            self.battery_percentage,
-            self.pedometer,
-            self.tubmling_times,
-            self.device_status,
-        ) = args[:17]
-        rest_args = args[17:]
-        self.base_stations_number = int(rest_args[0])
-        # ???, mcc, net, (area, cell, strength)*
-        self.base_stations = rest_args[1 : 4 + 3 * self.base_stations_number]
-        rest_args = rest_args[3 + 3 * self.base_stations_number + 1 :]
-        self.wifi_ap_number = int(rest_args[0])
-        # (SSID, MAC, strength)*
-        self.wifi_ap = rest_args[1 : 1 + 3 * self.wifi_ap_number]
-        self.positioning_accuracy = rest_args[-1]
 
-
-class UD2(BeeSurePkt):
+class UD2(_LOC_DATA):
     PROTO = "UD2"
 
 
@@ -374,7 +407,7 @@ class TKQ2(BeeSurePkt):
     RESPOND = Respond.INL
 
 
-class AL(BeeSurePkt):
+class AL(_LOC_DATA):
     PROTO = "AL"
     RESPOND = Respond.INL
 
