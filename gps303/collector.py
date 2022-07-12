@@ -254,9 +254,6 @@ def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
                 else:
                     log.debug("Stray event: %s on socket %s", fl, sk)
             # poll queue consumed, make changes now
-            for fd in tostop:
-                poller.unregister(fd)  # type: ignore
-                clients.stop(fd)
             for zmsg in tosend:
                 zpub.send(
                     Bcast(
@@ -269,6 +266,9 @@ def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
                 )
                 log.debug("Sending to the client: %s", zmsg)
                 clients.response(zmsg)
+            for fd in tostop:
+                poller.unregister(fd)  # type: ignore
+                clients.stop(fd)
             for clntsock, clntaddr in topoll:
                 fd = clients.add(clntsock, clntaddr)
                 poller.register(fd, flags=zmq.POLLIN)
