@@ -160,6 +160,16 @@ def boolx(x: Union[str, bool]) -> bool:
     return x
 
 
+def l3str(x: Union[str, List[str]]) -> List[str]:
+    if isinstance(x, str):
+        lx = x.split(",")
+    else:
+        lx = x
+    if len(lx) != 3 or not all(isinstance(el, str) for el in x):
+        raise ValueError(str(lx) + " is not a list of three strings")
+    return lx
+
+
 class MetaPkt(type):
     """
     For each class corresponding to a message, automatically create
@@ -290,12 +300,13 @@ class BeeSurePkt(metaclass=MetaPkt):
 
     def out_encode(self) -> str:
         # Overridden in subclasses, otherwise command verb only
-        return self.PROTO
+        return ""
 
     @property
     def packed(self) -> bytes:
-        buffer = self.encode().encode()
-        return f"[LT*0000000000*{len(buffer):04X}*".encode() + buffer + b"]"
+        data = self.encode()
+        payload = self.PROTO + "," + data if data else self.PROTO
+        return f"[LT*0000000000*{len(payload):04X}*{payload}]".encode()
 
 
 class UNKNOWN(BeeSurePkt):
@@ -412,6 +423,56 @@ class AL(_LOC_DATA):
     RESPOND = Respond.INL
 
 
+class CR(BeeSurePkt):
+    PROTO = "CR"
+
+
+class FLOWER(BeeSurePkt):
+    PROTO = "FLOWER"
+    OUT_KWARGS = (("number", int, 1),)
+
+    def out_encode(self) -> str:
+        self.number: int
+        return str(self.number)
+
+
+class POWEROFF(BeeSurePkt):
+    PROTO = "POWEROFF"
+
+
+class RESET(BeeSurePkt):
+    PROTO = "RESET"
+
+
+class SOS(BeeSurePkt):
+    PROTO = "SOS"
+    OUT_KWARGS = (("phonenumbers", l3str, ["", "", ""]),)
+
+    def out_encode(self) -> str:
+        self.phonenumbers: List[str]
+        return ",".join(self.phonenumbers)
+
+
+class _SET_PHONE(BeeSurePkt):
+    OUT_KWARGS = (("phonenumber", str, ""),)
+
+    def out_encode(self) -> str:
+        self.phonenumber: str
+        return self.phonenumber
+
+
+class SOS1(_SET_PHONE):
+    PROTO = "SOS1"
+
+
+class SOS2(_SET_PHONE):
+    PROTO = "SOS2"
+
+
+class SOS3(_SET_PHONE):
+    PROTO = "SOS3"
+
+
 # Build dicts protocol number -> class and class name -> protocol number
 CLASSES = {}
 PROTOS = {}
@@ -431,15 +492,21 @@ if True:  # just to indent the code, sorry!
 def class_by_prefix(
     prefix: str,
 ) -> Union[Type[BeeSurePkt], List[Tuple[str, str]]]:
+    if prefix.startswith(PROTO_PREFIX):
+        pname = prefix[len(PROTO_PREFIX) :].upper()
+    else:
+        raise KeyError(pname)
     lst = [
         (name, proto)
         for name, proto in PROTOS.items()
-        if name.upper().startswith(prefix.upper())
+        if name.upper().startswith(pname)
     ]
-    if len(lst) != 1:
-        return lst
-    _, proto = lst[0]
-    return CLASSES[proto]
+    for _, proto in lst:
+        if len(lst) == 1:  # unique prefix match
+            return CLASSES[proto]
+        if proto == pname:  # exact match
+            return CLASSES[proto]
+    return lst
 
 
 def proto_handled(proto: str) -> bool:

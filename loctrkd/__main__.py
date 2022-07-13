@@ -3,22 +3,40 @@
 from configparser import ConfigParser
 from datetime import datetime, timezone
 from getopt import getopt
+from importlib import import_module
 from logging import getLogger
 from sys import argv
 from time import time
-from typing import List, Tuple
+from typing import Any, cast, List, Tuple, Type, Union
 import zmq
 
 from . import common
-from .zx303proto import *
 from .zmsg import Bcast, Resp
 
 log = getLogger("loctrkd")
 
 
+class ProtoModule:
+    @staticmethod
+    def proto_handled(proto: str) -> bool:
+        ...
+
+    @staticmethod
+    def class_by_prefix(prefix: str) -> Any:
+        ...
+
+
+pmods: List[ProtoModule] = []
+
+
 def main(
     conf: ConfigParser, opts: List[Tuple[str, str]], args: List[str]
 ) -> None:
+    global pmods
+    pmods = [
+        cast(ProtoModule, import_module("." + modnm, __package__))
+        for modnm in conf.get("collector", "protocols").split(",")
+    ]
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
@@ -31,7 +49,14 @@ def main(
     imei = args[0]
     cmd = args[1]
     args = args[2:]
-    cls = class_by_prefix(cmd)
+    handled = False
+    for pmod in pmods:
+        if pmod.proto_handled(cmd):
+            handled = True
+            break
+    if not handled:
+        raise NotImplementedError(f"No protocol can handle {cmd}")
+    cls = pmod.class_by_prefix(cmd)
     if isinstance(cls, list):
         raise ValueError("Prefix does not select a single class: " + str(cls))
     kwargs = dict([arg.split("=") for arg in args])

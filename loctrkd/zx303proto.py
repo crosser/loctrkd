@@ -864,6 +864,10 @@ if True:  # just to indent the code, sorry!
 def class_by_prefix(
     prefix: str,
 ) -> Union[Type[GPS303Pkt], List[Tuple[str, int]]]:
+    if prefix.startswith(PROTO_PREFIX):
+        pname = prefix[len(PROTO_PREFIX) :]
+    else:
+        raise KeyError(pname)
     lst = [
         (name, proto)
         for name, proto in PROTOS.items()
