@@ -382,8 +382,8 @@ class _LOC_DATA(BeeSurePkt):
                 p.date + p.time,
                 "%d%m%y%H%M%S",
             )
-            .replace(tzinfo=timezone.utc)
-            .astimezone(tz=timezone.utc)
+            # .replace(tzinfo=timezone.utc)
+            # .astimezone(tz=timezone.utc)
         )
         self.latitude = p.lat * p.nors
         self.longitude = p.lon * p.eorw
