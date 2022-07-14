@@ -1,3 +1,9 @@
+gps303 (1.02) experimental; urgency=medium
+
+  * collector: prevent two active clients share IMEI
+
+ -- Eugene Crosser <crosser@average.org>  Thu, 14 Jul 2022 22:17:51 +0200
+
 gps303 (1.01) experimental; urgency=medium
 
   * collector: do not remove clients before all sends
