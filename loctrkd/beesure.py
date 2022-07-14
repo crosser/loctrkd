@@ -228,7 +228,6 @@ class Respond(Enum):
 
 class BeeSurePkt(metaclass=MetaPkt):
     RESPOND = Respond.NON  # Do not send anything back by default
-    PROTO: str
     IN_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
     OUT_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
     KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
@@ -303,6 +302,14 @@ class BeeSurePkt(metaclass=MetaPkt):
         return ""
 
     @property
+    def PROTO(self) -> str:
+        try:
+            proto, _ = self.__class__.__name__.split(".")
+        except ValueError:
+            proto = self.__class__.__name__
+        return proto
+
+    @property
     def packed(self) -> bytes:
         data = self.encode()
         payload = self.PROTO + "," + data if data else self.PROTO
@@ -310,11 +317,10 @@ class BeeSurePkt(metaclass=MetaPkt):
 
 
 class UNKNOWN(BeeSurePkt):
-    PROTO = "UNKNOWN"
+    pass
 
 
 class LK(BeeSurePkt):
-    PROTO = "LK"
     RESPOND = Respond.INL
 
     def in_decode(self, *args: str) -> None:
@@ -331,11 +337,11 @@ class LK(BeeSurePkt):
 
 
 class CONFIG(BeeSurePkt):
-    PROTO = "CONFIG"
+    pass
 
 
 class ICCID(BeeSurePkt):
-    PROTO = "ICCID"
+    pass
 
 
 class _LOC_DATA(BeeSurePkt):
@@ -401,34 +407,30 @@ class _LOC_DATA(BeeSurePkt):
 
 
 class UD(_LOC_DATA):
-    PROTO = "UD"
+    pass
 
 
 class UD2(_LOC_DATA):
-    PROTO = "UD2"
+    pass
 
 
 class TKQ(BeeSurePkt):
-    PROTO = "TKQ"
     RESPOND = Respond.INL
 
 
 class TKQ2(BeeSurePkt):
-    PROTO = "TKQ2"
     RESPOND = Respond.INL
 
 
 class AL(_LOC_DATA):
-    PROTO = "AL"
     RESPOND = Respond.INL
 
 
 class CR(BeeSurePkt):
-    PROTO = "CR"
+    pass
 
 
 class FLOWER(BeeSurePkt):
-    PROTO = "FLOWER"
     OUT_KWARGS = (("number", int, 1),)
 
     def out_encode(self) -> str:
@@ -437,15 +439,14 @@ class FLOWER(BeeSurePkt):
 
 
 class POWEROFF(BeeSurePkt):
-    PROTO = "POWEROFF"
+    pass
 
 
 class RESET(BeeSurePkt):
-    PROTO = "RESET"
+    pass
 
 
 class SOS(BeeSurePkt):
-    PROTO = "SOS"
     OUT_KWARGS = (("phonenumbers", l3str, ["", "", ""]),)
 
     def out_encode(self) -> str:
@@ -462,20 +463,19 @@ class _SET_PHONE(BeeSurePkt):
 
 
 class SOS1(_SET_PHONE):
-    PROTO = "SOS1"
+    pass
 
 
 class SOS2(_SET_PHONE):
-    PROTO = "SOS2"
+    pass
 
 
 class SOS3(_SET_PHONE):
-    PROTO = "SOS3"
+    pass
 
 
 # Build dicts protocol number -> class and class name -> protocol number
 CLASSES = {}
-PROTOS = {}
 if True:  # just to indent the code, sorry!
     for cls in [
         cls
@@ -484,24 +484,18 @@ if True:  # just to indent the code, sorry!
         and issubclass(cls, BeeSurePkt)
         and not name.startswith("_")
     ]:
-        if hasattr(cls, "PROTO"):
-            CLASSES[cls.PROTO] = cls
-            PROTOS[cls.__name__] = cls.PROTO
+        CLASSES[cls.__name__] = cls
 
 
 def class_by_prefix(
     prefix: str,
-) -> Union[Type[BeeSurePkt], List[Tuple[str, str]]]:
+) -> Union[Type[BeeSurePkt], List[str]]:
     if prefix.startswith(PROTO_PREFIX):
         pname = prefix[len(PROTO_PREFIX) :].upper()
     else:
         raise KeyError(pname)
-    lst = [
-        (name, proto)
-        for name, proto in PROTOS.items()
-        if name.upper().startswith(pname)
-    ]
-    for _, proto in lst:
+    lst = [name for name in CLASSES.keys() if name.upper().startswith(pname)]
+    for proto in lst:
         if len(lst) == 1:  # unique prefix match
             return CLASSES[proto]
         if proto == pname:  # exact match
@@ -568,6 +562,6 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
         retobj = UNKNOWN.In(vendor, imei, datalength, payload)
     else:
         retobj = UNKNOWN.Out(vendor, imei, datalength, payload)
-    retobj.PROTO = proto  # Override class attr with object attr
+    retobj.proto = proto  # Override class attr with object attr
     retobj.cause = cause
     return retobj
