@@ -34,6 +34,8 @@ from typing import (
 __all__ = (
     "Stream",
     "class_by_prefix",
+    "enframe",
+    "exposed_protos",
     "inline_response",
     "proto_handled",
     "parse_message",
@@ -946,3 +948,11 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
     retobj.PROTO = proto  # Override class attr with object attr
     retobj.cause = cause
     return retobj
+
+
+def exposed_protos() -> List[Tuple[str, bool]]:
+    return [
+        (proto_name(GPS_POSITIONING), True),
+        (proto_name(WIFI_POSITIONING), False),
+        (proto_name(STATUS), True),
+    ]

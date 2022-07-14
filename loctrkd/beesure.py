@@ -26,6 +26,7 @@ __all__ = (
     "Stream",
     "class_by_prefix",
     "enframe",
+    "exposed_protos",
     "inline_response",
     "proto_handled",
     "parse_message",
@@ -565,3 +566,10 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
     retobj.proto = proto  # Override class attr with object attr
     retobj.cause = cause
     return retobj
+
+
+def exposed_protos() -> List[Tuple[str, bool]]:
+    return [
+        (proto_name(UD), True),
+        (proto_name(UD2), False),
+    ]

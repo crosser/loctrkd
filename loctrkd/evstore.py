@@ -56,7 +56,7 @@ def stow(**kwargs: Any) -> None:
 
 def fetch(
     imei: str, matchlist: List[Tuple[bool, str]], backlog: int
-) -> List[Tuple[bool, float, bytes]]:
+) -> List[Tuple[bool, float, str, bytes]]:
     # matchlist is a list of tuples (is_incoming, proto)
     # returns a list of tuples (is_incoming, timestamp, packet)
     assert DB is not None
@@ -65,7 +65,7 @@ def fetch(
     )
     cur = DB.cursor()
     cur.execute(
-        f"""select is_incoming, tstamp, packet from events
+        f"""select is_incoming, tstamp, proto, packet from events
                     where ({selector}) and imei = ?
                     order by tstamp desc limit ?""",
         tuple(item for sublist in matchlist for item in sublist)
