@@ -108,15 +108,6 @@ class Client:
             if len(packet) < 2:  # frameend comes too early
                 log.warning("Packet too short: %s", packet)
                 break
-            if proto_of_message(packet) == LOGIN.PROTO:
-                msg = parse_message(packet)
-                if isinstance(msg, LOGIN):  # Can be unparseable
-                    self.imei = msg.imei
-                    log.info(
-                        "LOGIN from fd %d (IMEI %s)",
-                        self.sock.fileno(),
-                        self.imei,
-                    )
             msgs.append((when, self.addr, packet))
         return msgs
 
@@ -160,8 +151,23 @@ class Clients:
             return None
         result = []
         for when, peeraddr, packet in msgs:
-            if proto_of_message(packet) == LOGIN.PROTO:  # Could do blindly...
-                if clnt.imei:
+            if proto_of_message(packet) == LOGIN.PROTO:
+                msg = parse_message(packet)
+                if isinstance(msg, LOGIN):  # Can be unparseable
+                    if clnt.imei is None:
+                        clnt.imei = msg.imei
+                        log.info(
+                            "LOGIN from fd %d (IMEI %s)",
+                            clnt.sock.fileno(),
+                            clnt.imei,
+                        )
+                        oldclnt = self.by_imei.get(clnt.imei)
+                        if oldclnt is not None:
+                            log.info(
+                                "Orphaning fd %d with the same IMEI",
+                                oldclnt.sock.fileno(),
+                            )
+                            oldclnt.imei = None
                     self.by_imei[clnt.imei] = clnt
                 else:
                     log.warning(
