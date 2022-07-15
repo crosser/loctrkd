@@ -263,11 +263,15 @@ class BeeSurePkt(metaclass=MetaPkt):
         Construct the object _either_ from (length, payload),
         _or_ from the values of individual fields
         """
+        self.payload: Union[List[str], bytes]
         assert not args or (len(args) == 4 and not kwargs)
         if args:  # guaranteed to be two arguments at this point
             self.vendor, self.imei, self.datalength, self.payload = args
             try:
-                self.decode(*self.payload)
+                if isinstance(self.payload, list):
+                    self.decode(*self.payload)
+                else:
+                    self.decode(self.payload)
             except error as e:
                 raise DecodeError(e, obj=self)
         else:
@@ -293,7 +297,7 @@ class BeeSurePkt(metaclass=MetaPkt):
             ),
         )
 
-    def decode(self, *args: str) -> None:
+    def decode(self, *args: Any) -> None:
         ...
 
     def in_decode(self, *args: str) -> None:
@@ -341,12 +345,12 @@ class LK(BeeSurePkt):
 
     def in_decode(self, *args: str) -> None:
         numargs = len(args)
+        if numargs > 0:
+            self.step = args[0]
         if numargs > 1:
-            self.step = args[1]
+            self.tumbling_number = args[1]
         if numargs > 2:
-            self.tumbling_number = args[2]
-        if numargs > 3:
-            self.battery_percentage = args[3]
+            self.battery_percentage = args[2]
 
     def in_encode(self) -> str:
         return "LK"
@@ -366,7 +370,6 @@ class _LOC_DATA(BeeSurePkt):
         _id = lambda x: x
         for (obj, attr, func), val in zip(
             (
-                (p, "verb", _id),
                 (p, "date", _id),
                 (p, "time", _id),
                 (self, "gps_valid", lambda x: x == "A"),
@@ -388,10 +391,10 @@ class _LOC_DATA(BeeSurePkt):
                 (self, "mcc", int),
                 (self, "mnc", int),
             ),
-            args[:21],
+            args[:20],
         ):
             setattr(obj, attr, func(val))  # type: ignore
-        rest_args = args[21:]
+        rest_args = args[20:]
         # (area_id, cell_id, strength)*
         self.base_stations = [
             tuple(int(el) for el in rest_args[i * 3 : 3 + i * 3])
@@ -513,6 +516,24 @@ class SOS3(_SET_PHONE):
     pass
 
 
+class TK(BeeSurePkt):
+    RESPOND = Respond.INL
+
+    def in_decode(self, *args: Any) -> None:
+        assert len(args) == 1 and isinstance(args[0], bytes)
+        self.amr_data = (
+            args[0]
+            .replace(b"}*", b"*")
+            .replace(b"},", b",")
+            .replace(b"}[", b"[")
+            .replace(b"}]", b"]")
+            .replace(b"}}", b"}")
+        )
+
+    def out_encode(self) -> str:
+        return "1"  # 0 - receive failure, 1 - receive success
+
+
 # Build dicts protocol number -> class and class name -> protocol number
 CLASSES = {}
 if True:  # just to indent the code, sorry!
@@ -583,8 +604,15 @@ def probe_buffer(buffer: bytes) -> bool:
 def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
     """From a packet (without framing bytes) derive the XXX.In object"""
     toskip, vendor, imei, datalength = _framestart(packet)
-    payload = packet[20:-1].decode().split(",")
-    proto = payload[0] if len(payload) > 0 else ""
+    try:
+        splits = packet[20:-1].decode().split(",")
+        proto = splits[0] if len(splits) > 0 else ""
+        payload: Union[List[str], bytes] = splits[1:]
+    except UnicodeDecodeError:
+        bsplits = packet[20:-1].split(b",", 1)
+        if len(bsplits) == 2:
+            proto = bsplits[0].decode("ascii")
+            payload = bsplits[1]
     if proto not in CLASSES:
         cause: Union[DecodeError, ValueError, IndexError] = ValueError(
             f"Proto {proto} is unknown"
