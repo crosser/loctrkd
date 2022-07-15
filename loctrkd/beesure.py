@@ -340,30 +340,6 @@ class UNKNOWN(BeeSurePkt):
     pass
 
 
-class LK(BeeSurePkt):
-    RESPOND = Respond.INL
-
-    def in_decode(self, *args: str) -> None:
-        numargs = len(args)
-        if numargs > 0:
-            self.step = args[0]
-        if numargs > 1:
-            self.tumbling_number = args[1]
-        if numargs > 2:
-            self.battery_percentage = args[2]
-
-    def in_encode(self) -> str:
-        return "LK"
-
-
-class CONFIG(BeeSurePkt):
-    pass
-
-
-class ICCID(BeeSurePkt):
-    pass
-
-
 class _LOC_DATA(BeeSurePkt):
     def in_decode(self, *args: str) -> None:
         p = SimpleNamespace()
@@ -425,24 +401,12 @@ class _LOC_DATA(BeeSurePkt):
         self.longitude = p.lon * p.eorw
 
 
-class UD(_LOC_DATA):
-    pass
-
-
-class UD2(_LOC_DATA):
-    pass
-
-
-class TKQ(BeeSurePkt):
-    RESPOND = Respond.INL
-
-
-class TKQ2(BeeSurePkt):
-    RESPOND = Respond.INL
-
-
 class AL(_LOC_DATA):
     RESPOND = Respond.INL
+
+
+class CONFIG(BeeSurePkt):
+    pass
 
 
 class CR(BeeSurePkt):
@@ -455,6 +419,33 @@ class FLOWER(BeeSurePkt):
     def out_encode(self) -> str:
         self.number: int
         return str(self.number)
+
+
+class ICCID(BeeSurePkt):
+    pass
+
+
+class LK(BeeSurePkt):
+    RESPOND = Respond.INL
+
+    def in_decode(self, *args: str) -> None:
+        numargs = len(args)
+        if numargs > 0:
+            self.step = args[0]
+        if numargs > 1:
+            self.tumbling_number = args[1]
+        if numargs > 2:
+            self.battery_percentage = args[2]
+
+    def in_encode(self) -> str:
+        return "LK"
+
+
+class MESSAGE(BeeSurePkt):
+    OUT_KWARGS = (("message", str, ""),)
+
+    def out_encode(self) -> str:
+        return str(self.message.encode("utf_16_be").hex())
 
 
 class _PHB(BeeSurePkt):
@@ -532,6 +523,22 @@ class TK(BeeSurePkt):
 
     def out_encode(self) -> str:
         return "1"  # 0 - receive failure, 1 - receive success
+
+
+class TKQ(BeeSurePkt):
+    RESPOND = Respond.INL
+
+
+class TKQ2(BeeSurePkt):
+    RESPOND = Respond.INL
+
+
+class UD(_LOC_DATA):
+    pass
+
+
+class UD2(_LOC_DATA):
+    pass
 
 
 # Build dicts protocol number -> class and class name -> protocol number
