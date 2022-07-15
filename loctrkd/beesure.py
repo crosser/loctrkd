@@ -171,6 +171,21 @@ def l3str(x: Union[str, List[str]]) -> List[str]:
     return lx
 
 
+def pblist(x: Union[str, List[Tuple[str, str]]]) -> List[Tuple[str, str]]:
+    if isinstance(x, str):
+
+        def splitpair(s: str) -> Tuple[str, str]:
+            a, b = s.split(":")
+            return a, b
+
+        lx = [splitpair(el) for el in x.split(",")]
+    else:
+        lx = x
+    if len(lx) > 5:
+        raise ValueError(str(lx) + " has too many elements (max 5)")
+    return lx
+
+
 class MetaPkt(type):
     """
     For each class corresponding to a message, automatically create
@@ -437,6 +452,29 @@ class FLOWER(BeeSurePkt):
     def out_encode(self) -> str:
         self.number: int
         return str(self.number)
+
+
+class _PHB(BeeSurePkt):
+    OUT_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = (
+        ("entries", pblist, []),
+    )
+
+    def out_encode(self) -> str:
+        self.entries: List[Tuple[str, str]]
+        return ",".join(
+            [
+                ",".join((num, name.encode("utf_16_be").hex()))
+                for name, num in self.entries
+            ]
+        )
+
+
+class PHB(_PHB):
+    pass
+
+
+class PHB2(_PHB):
+    pass
 
 
 class POWEROFF(BeeSurePkt):
