@@ -43,6 +43,13 @@ def main(
     else:
         proto = ""
         selector = ""
+    dopts = dict(opts)
+    if len(args) > 1 and "-o" in dopts:
+        attr = args[1]
+        fn = dopts["-o"]
+    else:
+        attr = ""
+        fn = ""
 
     c.execute(
         """select tstamp, imei, peeraddr, is_incoming, proto, packet
@@ -64,8 +71,11 @@ def main(
             peeraddr,
             msg,
         )
+        if fn and hasattr(msg, attr):
+            with open(fn, "wb") as fl:  # TODO support multiple files
+                fl.write(getattr(msg, attr))
 
 
 if __name__.endswith("__main__"):
-    opts, args = getopt(argv[1:], "c:d")
+    opts, args = getopt(argv[1:], "o:c:d")
     main(common.init(log, opts=opts), opts, args)
