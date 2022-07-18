@@ -11,19 +11,10 @@ from typing import Any, cast, List, Tuple, Type, Union
 import zmq
 
 from . import common
+from .protomodule import ProtoModule
 from .zmsg import Bcast, Resp
 
 log = getLogger("loctrkd")
-
-
-class ProtoModule:
-    @staticmethod
-    def proto_handled(proto: str) -> bool:
-        ...
-
-    @staticmethod
-    def class_by_prefix(prefix: str) -> Any:
-        ...
 
 
 pmods: List[ProtoModule] = []

@@ -18,48 +18,12 @@ from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
 import zmq
 
 from . import common
+from .protomodule import ProtoModule
 from .zmsg import Bcast, Resp
 
 log = getLogger("loctrkd/collector")
 
 MAXBUFFER: int = 4096
-
-
-class ProtoModule:
-    class Stream:
-        def recv(self, segment: bytes) -> List[Union[bytes, str]]:
-            ...
-
-        def close(self) -> bytes:
-            ...
-
-    @staticmethod
-    def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
-        ...
-
-    @staticmethod
-    def probe_buffer(buffer: bytes) -> bool:
-        ...
-
-    @staticmethod
-    def parse_message(packet: bytes, is_incoming: bool = True) -> Any:
-        ...
-
-    @staticmethod
-    def inline_response(packet: bytes) -> Optional[bytes]:
-        ...
-
-    @staticmethod
-    def is_goodbye_packet(packet: bytes) -> bool:
-        ...
-
-    @staticmethod
-    def imei_from_packet(packet: bytes) -> Optional[str]:
-        ...
-
-    @staticmethod
-    def proto_of_message(packet: bytes) -> str:
-        ...
 
 
 pmods: List[ProtoModule] = []

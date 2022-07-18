@@ -10,18 +10,9 @@ from sys import argv
 from typing import Any, cast, List, Tuple
 
 from . import common
+from .protomodule import ProtoModule
 
 log = getLogger("loctrkd/qry")
-
-
-class ProtoModule:
-    @staticmethod
-    def proto_handled(proto: str) -> bool:
-        ...
-
-    @staticmethod
-    def parse_message(packet: bytes, is_incoming: bool = True) -> Any:
-        ...
 
 
 pmods: List[ProtoModule] = []

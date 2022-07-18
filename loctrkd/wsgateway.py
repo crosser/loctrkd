@@ -23,23 +23,10 @@ import zmq
 
 from . import common
 from .evstore import initdb, fetch
+from .protomodule import ProtoModule
 from .zmsg import Bcast, topic
 
 log = getLogger("loctrkd/wsgateway")
-
-
-class ProtoModule:
-    @staticmethod
-    def parse_message(packet: bytes, is_incoming: bool = True) -> Any:
-        ...
-
-    @staticmethod
-    def exposed_protos() -> List[Tuple[str, bool]]:
-        ...
-
-    @staticmethod
-    def proto_handled(proto: str) -> bool:
-        ...
 
 
 htmlfile = None

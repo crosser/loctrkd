@@ -8,19 +8,10 @@ from typing import Any, cast, List
 import zmq
 
 from . import common
+from .protomodule import ProtoModule
 from .zmsg import Bcast
 
 log = getLogger("loctrkd/watch")
-
-
-class ProtoModule:
-    @staticmethod
-    def proto_handled(proto: str) -> bool:
-        ...
-
-    @staticmethod
-    def parse_message(packet: bytes, is_incoming: bool = True) -> Any:
-        ...
 
 
 pmods: List[ProtoModule] = []
