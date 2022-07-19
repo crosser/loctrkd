@@ -1,4 +1,4 @@
 python3-loctrkd: systemd-service-file-refers-to-unusual-wantedby-target loctrkd.target [lib/systemd/system/loctrkd.collector.service]
-python3-loctrkd: systemd-service-file-refers-to-unusual-wantedby-target loctrkd.target [lib/systemd/system/loctrkd.lookaside.service]
+python3-loctrkd: systemd-service-file-refers-to-unusual-wantedby-target loctrkd.target [lib/systemd/system/loctrkd.rectifier.service]
 python3-loctrkd: systemd-service-file-refers-to-unusual-wantedby-target loctrkd.target [lib/systemd/system/loctrkd.storage.service]
 python3-loctrkd: systemd-service-file-refers-to-unusual-wantedby-target loctrkd.target [lib/systemd/system/loctrkd.termconfig.service]

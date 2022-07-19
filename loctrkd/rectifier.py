@@ -12,11 +12,11 @@ from . import common
 from .zx303proto import parse_message, proto_name, WIFI_POSITIONING
 from .zmsg import Bcast, Resp, topic
 
-log = getLogger("loctrkd/lookaside")
+log = getLogger("loctrkd/rectifier")
 
 
 def runserver(conf: ConfigParser) -> None:
-    qry = import_module("." + conf.get("lookaside", "backend"), __package__)
+    qry = import_module("." + conf.get("rectifier", "backend"), __package__)
     qry.init(conf)
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore

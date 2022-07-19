@@ -12,7 +12,7 @@ override_dh_installsystemd:
 	dh_installsystemd --name=loctrkd
 	dh_installsystemd --name=loctrkd.collector
 	dh_installsystemd --name=loctrkd.storage
-	dh_installsystemd --name=loctrkd.lookaside
+	dh_installsystemd --name=loctrkd.rectifier
 	dh_installsystemd --name=loctrkd.termconfig
 	dh_installsystemd --name=loctrkd.wsgateway
 	dh_installsystemd --name=loctrkd.ocid-dload

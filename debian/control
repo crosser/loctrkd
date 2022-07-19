@@ -26,4 +26,4 @@ Depends: adduser,
 Conflicts: python3-gps303
 Replaces: python3-gps303
 Description: Suite of modules to collect reports from xz303 GPS trackers
- Consists of collector, storagae, lookaside, and termconfig
+ Consists of collector, storagae, rectifier, and termconfig

@@ -3,12 +3,12 @@ Description=GPS303 support suite
 Requires=loctrkd.collector.service \
         loctrkd.storage.service \
         loctrkd.termconfig.service \
-        loctrkd.lookaside.service \
+        loctrkd.rectifier.service \
 	loctrkd.wsgateway.service
 After=loctrkd.collector.service \
       loctrkd.storage.service \
       loctrkd.termconfig.service \
-      loctrkd.lookaside.service \
+      loctrkd.rectifier.service \
       loctrkd.wsgateway.service
 
 [Install]

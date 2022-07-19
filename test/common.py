@@ -52,7 +52,7 @@ class TestWithServers(TestCase):
             "dbfn": self.tmpfilebase + ".opencellid.sqlite",
             "downloadurl": f"http://localhost:{freeports[2]}/test/262.csv.gz",
         }
-        self.conf["lookaside"] = {
+        self.conf["rectifier"] = {
             "backend": "opencellid",
         }
         self.conf["wsgateway"] = {

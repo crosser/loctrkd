@@ -5,7 +5,7 @@ PartOf=loctrkd.target
 [Service]
 Type=simple
 EnvironmentFile=-/etc/default/loctrkd
-ExecStart=python3 -m loctrkd.lookaside $OPTIONS
+ExecStart=python3 -m loctrkd.rectifier $OPTIONS
 KillSignal=INT
 Restart=on-failure
 StandardOutput=journal

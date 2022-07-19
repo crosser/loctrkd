@@ -14,7 +14,7 @@ from loctrkd.ocid_dload import SCHEMA
 class Storage(TestWithServers):
     def setUp(self, *args: str, **kwargs: Any) -> None:
         super().setUp(
-            "collector", "storage", "lookaside", "termconfig", verbose=True
+            "collector", "storage", "rectifier", "termconfig", verbose=True
         )
         with connect(self.conf.get("opencellid", "dbfn")) as ldb:
             ldb.execute(SCHEMA)
