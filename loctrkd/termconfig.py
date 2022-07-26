@@ -8,6 +8,7 @@ import zmq
 
 from . import common
 from .zx303proto import *
+from .zx303proto import STATUS, SETUP, POSITION_UPLOAD_INTERVAL
 from .zmsg import Bcast, Resp, topic
 
 log = getLogger("loctrkd/termconfig")

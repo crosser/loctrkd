@@ -45,44 +45,6 @@ __all__ = (
     "proto_name",
     "DecodeError",
     "Respond",
-    "GPS303Pkt",
-    "UNKNOWN",
-    "LOGIN",
-    "SUPERVISION",
-    "HEARTBEAT",
-    "GPS_POSITIONING",
-    "GPS_OFFLINE_POSITIONING",
-    "STATUS",
-    "HIBERNATION",
-    "RESET",
-    "WHITELIST_TOTAL",
-    "WIFI_OFFLINE_POSITIONING",
-    "TIME",
-    "PROHIBIT_LBS",
-    "GPS_LBS_SWITCH_TIMES",
-    "REMOTE_MONITOR_PHONE",
-    "SOS_PHONE",
-    "DAD_PHONE",
-    "MOM_PHONE",
-    "STOP_UPLOAD",
-    "GPS_OFF_PERIOD",
-    "DND_PERIOD",
-    "RESTART_SHUTDOWN",
-    "DEVICE",
-    "ALARM_CLOCK",
-    "STOP_ALARM",
-    "SETUP",
-    "SYNCHRONOUS_WHITELIST",
-    "RESTORE_PASSWORD",
-    "WIFI_POSITIONING",
-    "MANUAL_POSITIONING",
-    "BATTERY_CHARGE",
-    "CHARGER_CONNECTED",
-    "CHARGER_DISCONNECTED",
-    "VIBRATION_RECEIVED",
-    "POSITION_UPLOAD_INTERVAL",
-    "SOS_ALARM",
-    "UNKNOWN_B3",
 )
 
 PROTO_PREFIX = "ZX:"
@@ -401,6 +363,16 @@ class _GPS_POSITIONING(GPS303Pkt):
         ttup = (tup[0] % 100,) + tup[1:6]
         return pack("BBBBBB", *ttup)
 
+    def rectified(self) -> Dict[str, Any]:  # JSON-able dict
+        return {
+            "type": "location",
+            "devtime": str(self.devtime),
+            "speed": self.speed,
+            "direction": self.heading,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+        }
+
 
 class GPS_POSITIONING(_GPS_POSITIONING):
     PROTO = 0x10
@@ -516,6 +488,16 @@ class _WIFI_POSITIONING(GPS303Pkt):
                 ),
             ]
         )
+
+    def rectified(self) -> Dict[str, Any]:  # JSON-able dict
+        return {
+            "type": "approximate_location",
+            "devtime": str(self.devtime),
+            "mcc": self.mcc,
+            "mnc": self.mnc,
+            "base_stations": self.gsm_cells,
+            "wifi_aps": self.wifi_aps,
+        }
 
 
 class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):
@@ -904,7 +886,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
 
 def exposed_protos() -> List[Tuple[str, bool]]:
     return [
-        (proto_name(GPS_POSITIONING), True),
-        (proto_name(WIFI_POSITIONING), False),
-        (proto_name(STATUS), True),
+        (proto_name(cls), cls.RESPOND is Respond.EXT)
+        for cls in CLASSES.values()
+        if hasattr(cls, "rectified")
     ]

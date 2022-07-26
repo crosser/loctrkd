@@ -58,6 +58,7 @@ if __name__.endswith("__main__"):
     from datetime import datetime, timezone
     import sys
     from .zx303proto import *
+    from .zx303proto import WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING
 
     db = connect(sys.argv[1])
     c = db.cursor()

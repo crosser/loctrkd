@@ -36,7 +36,6 @@ __all__ = (
     "proto_name",
     "DecodeError",
     "Respond",
-    "LK",
 )
 
 PROTO_PREFIX = "BS:"
@@ -352,6 +351,30 @@ class _LOC_DATA(BeeSurePkt):
         self.latitude = p.lat * p.nors
         self.longitude = p.lon * p.eorw
 
+    def rectified(self) -> Dict[str, Any]:  # JSON-able dict
+        if self.gps_valid:
+            return {
+                "type": "location",
+                "devtime": str(self.devtime),
+                "battery_percentage": self.battery_percentage,
+                "accuracy": self.positioning_accuracy,
+                "altitude": self.altitude,
+                "speed": self.speed,
+                "direction": self.direction,
+                "latitude": self.latitude,
+                "longitude": self.longitude,
+            }
+        else:
+            return {
+                "type": "approximate_location",
+                "devtime": str(self.devtime),
+                "battery_percentage": self.battery_percentage,
+                "mcc": self.mcc,
+                "mnc": self.mnc,
+                "base_stations": self.base_stations,
+                "wifi_aps": self.wifi_aps,
+            }
+
 
 class AL(_LOC_DATA):
     RESPOND = Respond.INL
@@ -595,6 +618,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
 
 def exposed_protos() -> List[Tuple[str, bool]]:
     return [
-        (proto_name(UD), True),
-        (proto_name(UD2), False),
+        (proto_name(cls), False)
+        for cls in CLASSES.values()
+        if hasattr(cls, "rectified")
     ]

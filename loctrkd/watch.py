@@ -37,6 +37,8 @@ def runserver(conf: ConfigParser) -> None:
                 if pmod.proto_handled(zmsg.proto):
                     msg = pmod.parse_message(zmsg.packet, zmsg.is_incoming)
                     print(msg)
+                    if zmsg.is_incoming and hasattr(msg, "rectified"):
+                        print(msg.rectified())
     except KeyboardInterrupt:
         pass
 

@@ -8,6 +8,15 @@ from typing import Any
 import unittest
 from .common import send_and_drain, TestWithServers
 from loctrkd.zx303proto import *
+from loctrkd.zx303proto import (
+    STATUS,
+    WIFI_POSITIONING,
+    WIFI_OFFLINE_POSITIONING,
+    WIFI_POSITIONING,
+    LOGIN,
+    HIBERNATION,
+    SETUP,
+)
 from loctrkd.ocid_dload import SCHEMA
 
 
