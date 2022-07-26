@@ -26,7 +26,7 @@ def main(
     global pmods
     pmods = [
         cast(ProtoModule, import_module("." + modnm, __package__))
-        for modnm in conf.get("collector", "protocols").split(",")
+        for modnm in conf.get("common", "protocols").split(",")
     ]
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore

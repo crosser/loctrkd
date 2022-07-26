@@ -16,7 +16,7 @@ log = getLogger("loctrkd/rectifier")
 
 
 def runserver(conf: ConfigParser) -> None:
-    qry = import_module("." + conf.get("rectifier", "backend"), __package__)
+    qry = import_module("." + conf.get("rectifier", "lookaside"), __package__)
     qry.init(conf)
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore

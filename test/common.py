@@ -39,11 +39,13 @@ class TestWithServers(TestCase):
                 freeports.append(sk.getsockname()[1])
         _, self.tmpfilebase = mkstemp()
         self.conf = ConfigParser()
+        self.conf["common"] = {
+            "protocols": "zx303proto",
+        }
         self.conf["collector"] = {
             "port": str(freeports[0]),
             "publishurl": "ipc://" + self.tmpfilebase + ".pub",
             "listenurl": "ipc://" + self.tmpfilebase + ".pul",
-            "protocols": "zx303proto",
         }
         self.conf["storage"] = {
             "dbfn": self.tmpfilebase + ".storage.sqlite",
@@ -53,7 +55,7 @@ class TestWithServers(TestCase):
             "downloadurl": f"http://localhost:{freeports[2]}/test/262.csv.gz",
         }
         self.conf["rectifier"] = {
-            "backend": "opencellid",
+            "lookaside": "opencellid",
         }
         self.conf["wsgateway"] = {
             "port": str(freeports[1]),

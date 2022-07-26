@@ -261,7 +261,7 @@ def runserver(conf: ConfigParser) -> None:
     global htmlfile, pmods, selector
     pmods = [
         cast(ProtoModule, import_module("." + modnm, __package__))
-        for modnm in conf.get("collector", "protocols").split(",")
+        for modnm in conf.get("common", "protocols").split(",")
     ]
     for pmod in pmods:
         for proto, is_incoming in pmod.exposed_protos():
