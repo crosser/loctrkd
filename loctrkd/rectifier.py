@@ -25,6 +25,8 @@ def runserver(conf: ConfigParser) -> None:
     zsub.setsockopt(zmq.SUBSCRIBE, topic(proto_name(WIFI_POSITIONING)))
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
+    zpub = zctx.socket(zmq.PUB)  # type: ignore
+    zpub.connect(conf.get("rectifier", "publishurl"))
 
     try:
         while True:
@@ -53,6 +55,7 @@ def runserver(conf: ConfigParser) -> None:
 
     except KeyboardInterrupt:
         zsub.close()
+        zpub.close()
         zpush.close()
         zctx.destroy()  # type: ignore
         qry.shut()

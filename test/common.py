@@ -56,6 +56,7 @@ class TestWithServers(TestCase):
         }
         self.conf["rectifier"] = {
             "lookaside": "opencellid",
+            "publishurl": "ipc://" + self.tmpfilebase + ".rect.pub",
         }
         self.conf["wsgateway"] = {
             "port": str(freeports[1]),
@@ -101,6 +102,7 @@ class TestWithServers(TestCase):
         for sfx in (
             "",
             ".pub",
+            ".rect.pub",
             ".pul",
             ".storage.sqlite",
             ".opencellid.sqlite",
