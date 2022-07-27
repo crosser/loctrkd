@@ -23,6 +23,8 @@ from time import sleep
 from typing import Optional
 from unittest import TestCase
 
+from loctrkd.common import init_protocols
+
 NUMPORTS = 3
 
 
@@ -61,6 +63,7 @@ class TestWithServers(TestCase):
         self.conf["wsgateway"] = {
             "port": str(freeports[1]),
         }
+        init_protocols(self.conf)
         self.children = []
         for srvname in args:
             if srvname == "collector":

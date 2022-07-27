@@ -17,17 +17,9 @@ from .zmsg import Bcast, Resp
 log = getLogger("loctrkd")
 
 
-pmods: List[ProtoModule] = []
-
-
 def main(
     conf: ConfigParser, opts: List[Tuple[str, str]], args: List[str]
 ) -> None:
-    global pmods
-    pmods = [
-        cast(ProtoModule, import_module("." + modnm, __package__))
-        for modnm in conf.get("common", "protocols").split(",")
-    ]
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
@@ -40,12 +32,8 @@ def main(
     imei = args[0]
     cmd = args[1]
     args = args[2:]
-    handled = False
-    for pmod in pmods:
-        if pmod.proto_handled(cmd):
-            handled = True
-            break
-    if not handled:
+    pmod = common.pmod_for_proto(cmd)
+    if pmod is None:
         raise NotImplementedError(f"No protocol can handle {cmd}")
     cls = pmod.class_by_prefix(cmd)
     if isinstance(cls, list):

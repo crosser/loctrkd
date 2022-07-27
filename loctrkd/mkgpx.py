@@ -19,17 +19,9 @@ from .protomodule import ProtoModule
 log = getLogger("loctrkd/mkgpx")
 
 
-pmods: List[ProtoModule] = []
-
-
 def main(
     conf: ConfigParser, opts: List[Tuple[str, str]], args: List[str]
 ) -> None:
-    global pmods
-    pmods = [
-        cast(ProtoModule, import_module("." + modnm, __package__))
-        for modnm in conf.get("common", "protocols").split(",")
-    ]
     db = connect(conf.get("storage", "dbfn"))
     c = db.cursor()
     c.execute(
@@ -52,9 +44,9 @@ def main(
     )
 
     for tstamp, is_incoming, proto, packet in c:
-        for pmod in pmods:
-            if pmod.proto_handled(proto):
-                msg = pmod.parse_message(packet, is_incoming=is_incoming)
+        pmod = common.pmod_for_proto(proto)
+        if pmod is not None:
+            msg = pmod.parse_message(packet, is_incoming=is_incoming)
         lat, lon = msg.latitude, msg.longitude
         isotime = (
             datetime.fromtimestamp(tstamp)

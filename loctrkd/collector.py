@@ -14,7 +14,7 @@ from socket import (
 )
 from struct import pack
 from time import time
-from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import zmq
 
 from . import common
@@ -24,9 +24,6 @@ from .zmsg import Bcast, Resp
 log = getLogger("loctrkd/collector")
 
 MAXBUFFER: int = 4096
-
-
-pmods: List[ProtoModule] = []
 
 
 class Client:
@@ -71,11 +68,9 @@ class Client:
             )
             return None
         if self.stream is None:
-            for pmod in pmods:
-                if pmod.probe_buffer(segment):
-                    self.pmod = pmod
-                    self.stream = pmod.Stream()
-                    break
+            self.pmod = common.probe_pmod(segment)
+            if self.pmod is not None:
+                self.stream = self.pmod.Stream()
         if self.stream is None:
             log.info(
                 "unrecognizable %d bytes of data %s from fd %d",
@@ -181,11 +176,6 @@ class Clients:
 
 
 def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
-    global pmods
-    pmods = [
-        cast(ProtoModule, import_module("." + modnm, __package__))
-        for modnm in conf.get("common", "protocols").split(",")
-    ]
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zpub = zctx.socket(zmq.PUB)  # type: ignore

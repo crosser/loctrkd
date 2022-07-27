@@ -14,15 +14,7 @@ from .zmsg import Bcast
 log = getLogger("loctrkd/watch")
 
 
-pmods: List[ProtoModule] = []
-
-
 def runserver(conf: ConfigParser) -> None:
-    global pmods
-    pmods = [
-        cast(ProtoModule, import_module("." + modnm, __package__))
-        for modnm in conf.get("common", "protocols").split(",")
-    ]
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zsub = zctx.socket(zmq.SUB)  # type: ignore
@@ -33,12 +25,12 @@ def runserver(conf: ConfigParser) -> None:
         while True:
             zmsg = Bcast(zsub.recv())
             print("I" if zmsg.is_incoming else "O", zmsg.proto, zmsg.imei)
-            for pmod in pmods:
-                if pmod.proto_handled(zmsg.proto):
-                    msg = pmod.parse_message(zmsg.packet, zmsg.is_incoming)
-                    print(msg)
-                    if zmsg.is_incoming and hasattr(msg, "rectified"):
-                        print(msg.rectified())
+            pmod = common.pmod_for_proto(zmsg.proto)
+            if pmod is not None:
+                msg = pmod.parse_message(zmsg.packet, zmsg.is_incoming)
+                print(msg)
+                if zmsg.is_incoming and hasattr(msg, "rectified"):
+                    print(msg.rectified())
     except KeyboardInterrupt:
         pass
 
