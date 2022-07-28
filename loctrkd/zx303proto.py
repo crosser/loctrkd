@@ -32,6 +32,7 @@ from typing import (
     Union,
 )
 
+from .common import CoordReport, HintReport, StatusReport
 from .protomodule import ProtoClass
 
 __all__ = (
@@ -364,10 +365,12 @@ class _GPS_POSITIONING(GPS303Pkt):
         ttup = (tup[0] % 100,) + tup[1:6]
         return pack("BBBBBB", *ttup)
 
-    def rectified(self) -> SimpleNamespace:  # JSON-able dict
-        return SimpleNamespace(
-            type="location",
+    def rectified(self) -> CoordReport:  # JSON-able dict
+        return CoordReport(
             devtime=str(self.devtime),
+            battery_percentage=-1,
+            accuracy=-1.0,
+            altitude=-1.0,
             speed=self.speed,
             direction=self.heading,
             latitude=self.latitude,
@@ -411,6 +414,9 @@ class STATUS(GPS303Pkt):
 
     def out_encode(self) -> bytes:  # Set interval in minutes
         return pack("B", self.upload_interval)
+
+    def rectified(self) -> StatusReport:
+        return StatusReport(battery_percentage=self.batt)
 
 
 class HIBERNATION(GPS303Pkt):  # Server can send to send devicee to sleep
@@ -490,14 +496,14 @@ class _WIFI_POSITIONING(GPS303Pkt):
             ]
         )
 
-    def rectified(self) -> SimpleNamespace:  # JSON-able dict
-        return SimpleNamespace(
-            type="approximate_location",
+    def rectified(self) -> HintReport:
+        return HintReport(
             devtime=str(self.devtime),
+            battery_percentage=-1,
             mcc=self.mcc,
             mnc=self.mnc,
-            base_stations=self.gsm_cells,
-            wifi_aps=self.wifi_aps,
+            gsm_cells=self.gsm_cells,
+            wifi_aps=[("<UNKNOWN>", mac, sig) for mac, sig in self.wifi_aps],
         )
 
 
@@ -887,7 +893,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
 
 def exposed_protos() -> List[Tuple[str, bool]]:
     return [
-        (proto_name(cls), cls.RESPOND is Respond.EXT)
+        (proto_name(cls)[:16], cls.RESPOND is Respond.EXT)
         for cls in CLASSES.values()
         if hasattr(cls, "rectified")
     ]

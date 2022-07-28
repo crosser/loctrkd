@@ -168,7 +168,7 @@ class Resp(_Zmsg):
         self.packet = buffer[24:]
 
 
-class Report(_Zmsg):
+class Rept(_Zmsg):
     """Broadcast Zzmq message with "rectified" proto-agnostic json data"""
 
     KWARGS = (("imei", None), ("payload", ""))

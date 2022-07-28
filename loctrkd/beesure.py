@@ -23,6 +23,12 @@ from typing import (
 from types import SimpleNamespace
 
 from .protomodule import ProtoClass
+from .common import (
+    CoordReport,
+    HintReport,
+    StatusReport,
+    Report,
+)
 
 __all__ = (
     "Stream",
@@ -313,7 +319,7 @@ class _LOC_DATA(BeeSurePkt):
                 (self, "pedometer", int),
                 (self, "tubmling_times", int),
                 (self, "device_status", lambda x: int(x, 16)),
-                (self, "base_stations_number", int),
+                (self, "gsm_cells_number", int),
                 (self, "connect_base_station_number", int),
                 (self, "mcc", int),
                 (self, "mnc", int),
@@ -323,11 +329,11 @@ class _LOC_DATA(BeeSurePkt):
             setattr(obj, attr, func(val))  # type: ignore
         rest_args = args[20:]
         # (area_id, cell_id, strength)*
-        self.base_stations = [
-            tuple(int(el) for el in rest_args[i * 3 : 3 + i * 3])
-            for i in range(self.base_stations_number)
+        self.gsm_cells: List[Tuple[int, int, int]] = [
+            tuple(int(el) for el in rest_args[i * 3 : 3 + i * 3])  # type: ignore
+            for i in range(self.gsm_cells_number)
         ]
-        rest_args = rest_args[3 * self.base_stations_number :]
+        rest_args = rest_args[3 * self.gsm_cells_number :]
         self.wifi_aps_number = int(rest_args[0])
         # (SSID, MAC, strength)*
         self.wifi_aps = [
@@ -351,10 +357,9 @@ class _LOC_DATA(BeeSurePkt):
         self.latitude = p.lat * p.nors
         self.longitude = p.lon * p.eorw
 
-    def rectified(self) -> SimpleNamespace:  # JSON-able dict
+    def rectified(self) -> Report:
         if self.gps_valid:
-            return SimpleNamespace(
-                type="location",
+            return CoordReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
                 accuracy=self.positioning_accuracy,
@@ -365,13 +370,12 @@ class _LOC_DATA(BeeSurePkt):
                 longitude=self.longitude,
             )
         else:
-            return SimpleNamespace(
-                type="approximate_location",
+            return HintReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
                 mcc=self.mcc,
                 mnc=self.mnc,
-                base_stations=self.base_stations,
+                gsm_cells=self.gsm_cells,
                 wifi_aps=self.wifi_aps,
             )
 
@@ -618,7 +622,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
 
 def exposed_protos() -> List[Tuple[str, bool]]:
     return [
-        (proto_name(cls), False)
+        (proto_name(cls)[:16], False)
         for cls in CLASSES.values()
         if hasattr(cls, "rectified")
     ]

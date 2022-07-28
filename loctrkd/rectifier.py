@@ -9,7 +9,8 @@ from struct import pack
 import zmq
 
 from . import common
-from .zmsg import Bcast, Report, Resp, topic
+from .common import CoordReport, HintReport, StatusReport, Report
+from .zmsg import Bcast, Rept, Resp, topic
 
 log = getLogger("loctrkd/rectifier")
 
@@ -42,24 +43,48 @@ def runserver(conf: ConfigParser) -> None:
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            rect = msg.rectified()
+            rect: Report = msg.rectified()
             log.debug("rectified: %s", rect)
-            if rect.type == "approximate_location":
+            if isinstance(rect, (CoordReport, StatusReport)):
+                zpub.send(Rept(imei=zmsg.imei, payload=rect.json).packed)
+            elif isinstance(rect, HintReport):
                 try:
                     lat, lon = qry.lookup(
-                        rect.mcc, rect.mnc, rect.base_stations, rect.wifi_aps
-                    )
-                    resp = Resp(
-                        imei=zmsg.imei,
-                        when=zmsg.when,  # not the current time, but the original!
-                        packet=msg.Out(latitude=lat, longitude=lon).packed,
+                        rect.mcc, rect.mnc, rect.gsm_cells, rect.wifi_aps
                     )
                     log.debug(
-                        "Response for lat=%s, lon=%s: %s", lat, lon, resp
+                        "Approximated lat=%s, lon=%s for %s", lat, lon, rect
                     )
-                    zpush.send(resp.packed)
+                    if proto_needanswer.get(zmsg.proto, False):
+                        resp = Resp(
+                            imei=zmsg.imei,
+                            when=zmsg.when,  # not the current time, but the original!
+                            packet=msg.Out(latitude=lat, longitude=lon).packed,
+                        )
+                        log.debug("Sending reponse %s", resp)
+                        zpush.send(resp.packed)
+                    zpub.send(
+                        Rept(
+                            imei=zmsg.imei,
+                            payload=CoordReport(
+                                devtime=rect.devtime,
+                                battery_percentage=rect.battery_percentage,
+                                accuracy=-1,
+                                altitude=-1,
+                                speed=-1,
+                                direction=-1,
+                                latitude=lat,
+                                longitude=lon,
+                            ).json,
+                        ).packed
+                    )
                 except Exception as e:
-                    log.warning("Lookup for %s resulted in %s", msg, e)
+                    log.warning(
+                        "Lookup for %s rectified as %s resulted in %s",
+                        msg,
+                        rect,
+                        e,
+                    )
 
     except KeyboardInterrupt:
         zsub.close()
