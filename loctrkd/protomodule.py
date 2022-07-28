@@ -129,6 +129,9 @@ class ProtoModule:
     def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
         ...
 
+    class DecodeError(Exception):
+        ...
+
     @staticmethod
     def exposed_protos() -> List[Tuple[str, bool]]:
         ...

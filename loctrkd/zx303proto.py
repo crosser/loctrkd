@@ -19,6 +19,7 @@ from enum import Enum
 from inspect import isclass
 from struct import error, pack, unpack
 from time import time
+from types import SimpleNamespace
 from typing import (
     Any,
     Callable,
@@ -363,15 +364,15 @@ class _GPS_POSITIONING(GPS303Pkt):
         ttup = (tup[0] % 100,) + tup[1:6]
         return pack("BBBBBB", *ttup)
 
-    def rectified(self) -> Dict[str, Any]:  # JSON-able dict
-        return {
-            "type": "location",
-            "devtime": str(self.devtime),
-            "speed": self.speed,
-            "direction": self.heading,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-        }
+    def rectified(self) -> SimpleNamespace:  # JSON-able dict
+        return SimpleNamespace(
+            type="location",
+            devtime=str(self.devtime),
+            speed=self.speed,
+            direction=self.heading,
+            latitude=self.latitude,
+            longitude=self.longitude,
+        )
 
 
 class GPS_POSITIONING(_GPS_POSITIONING):
@@ -489,15 +490,15 @@ class _WIFI_POSITIONING(GPS303Pkt):
             ]
         )
 
-    def rectified(self) -> Dict[str, Any]:  # JSON-able dict
-        return {
-            "type": "approximate_location",
-            "devtime": str(self.devtime),
-            "mcc": self.mcc,
-            "mnc": self.mnc,
-            "base_stations": self.gsm_cells,
-            "wifi_aps": self.wifi_aps,
-        }
+    def rectified(self) -> SimpleNamespace:  # JSON-able dict
+        return SimpleNamespace(
+            type="approximate_location",
+            devtime=str(self.devtime),
+            mcc=self.mcc,
+            mnc=self.mnc,
+            base_stations=self.gsm_cells,
+            wifi_aps=self.wifi_aps,
+        )
 
 
 class WIFI_OFFLINE_POSITIONING(_WIFI_POSITIONING):

@@ -9,8 +9,7 @@ from struct import pack
 import zmq
 
 from . import common
-from .zx303proto import parse_message, proto_name, WIFI_POSITIONING
-from .zmsg import Bcast, Resp, topic
+from .zmsg import Bcast, Report, Resp, topic
 
 log = getLogger("loctrkd/rectifier")
 
@@ -18,11 +17,13 @@ log = getLogger("loctrkd/rectifier")
 def runserver(conf: ConfigParser) -> None:
     qry = import_module("." + conf.get("rectifier", "lookaside"), __package__)
     qry.init(conf)
+    proto_needanswer = dict(common.exposed_protos())
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
     zctx = zmq.Context()  # type: ignore
     zsub = zctx.socket(zmq.SUB)  # type: ignore
     zsub.connect(conf.get("collector", "publishurl"))
-    zsub.setsockopt(zmq.SUBSCRIBE, topic(proto_name(WIFI_POSITIONING)))
+    for proto in proto_needanswer.keys():
+        zsub.setsockopt(zmq.SUBSCRIBE, topic(proto))
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
     zpub = zctx.socket(zmq.PUB)  # type: ignore
@@ -31,7 +32,9 @@ def runserver(conf: ConfigParser) -> None:
     try:
         while True:
             zmsg = Bcast(zsub.recv())
-            msg = parse_message(zmsg.packet)
+            msg = common.parse_message(
+                zmsg.proto, zmsg.packet, is_incoming=zmsg.is_incoming
+            )
             log.debug(
                 "IMEI %s from %s at %s: %s",
                 zmsg.imei,
@@ -39,19 +42,24 @@ def runserver(conf: ConfigParser) -> None:
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            try:
-                lat, lon = qry.lookup(
-                    msg.mcc, msg.mnc, msg.gsm_cells, msg.wifi_aps
-                )
-                resp = Resp(
-                    imei=zmsg.imei,
-                    when=zmsg.when,  # not the current time, but the original!
-                    packet=msg.Out(latitude=lat, longitude=lon).packed,
-                )
-                log.debug("Response for lat=%s, lon=%s: %s", lat, lon, resp)
-                zpush.send(resp.packed)
-            except Exception as e:
-                log.warning("Lookup for %s resulted in %s", msg, e)
+            rect = msg.rectified()
+            log.debug("rectified: %s", rect)
+            if rect.type == "approximate_location":
+                try:
+                    lat, lon = qry.lookup(
+                        rect.mcc, rect.mnc, rect.base_stations, rect.wifi_aps
+                    )
+                    resp = Resp(
+                        imei=zmsg.imei,
+                        when=zmsg.when,  # not the current time, but the original!
+                        packet=msg.Out(latitude=lat, longitude=lon).packed,
+                    )
+                    log.debug(
+                        "Response for lat=%s, lon=%s: %s", lat, lon, resp
+                    )
+                    zpush.send(resp.packed)
+                except Exception as e:
+                    log.warning("Lookup for %s resulted in %s", msg, e)
 
     except KeyboardInterrupt:
         zsub.close()

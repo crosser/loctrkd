@@ -166,3 +166,28 @@ class Resp(_Zmsg):
 
         self.when = when
         self.packet = buffer[24:]
+
+
+class Report(_Zmsg):
+    """Broadcast Zzmq message with "rectified" proto-agnostic json data"""
+
+    KWARGS = (("imei", None), ("payload", ""))
+
+    @property
+    def packed(self) -> bytes:
+        return (
+            pack(
+                "16s",
+                "0000000000000000"
+                if self.imei is None
+                else self.imei.encode(),
+            )
+            + self.payload.encode()
+        )
+
+    def decode(self, buffer: bytes) -> None:
+        imei = buffer[:16]
+        self.imei = (
+            None if imei == b"0000000000000000" else imei.decode().strip("\0")
+        )
+        self.payload = buffer[16:].decode()

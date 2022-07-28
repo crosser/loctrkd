@@ -67,3 +67,12 @@ def pmod_for_proto(proto: str) -> Optional[ProtoModule]:
         if pmod.proto_handled(proto):
             return pmod
     return None
+
+
+def parse_message(proto: str, packet: bytes, is_incoming: bool = True) -> Any:
+    pmod = pmod_for_proto(proto)
+    return pmod.parse_message(packet, is_incoming) if pmod else None
+
+
+def exposed_protos() -> List[Tuple[str, bool]]:
+    return [item for pmod in pmods for item in pmod.exposed_protos()]
