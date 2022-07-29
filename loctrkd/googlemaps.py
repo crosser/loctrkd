@@ -45,33 +45,3 @@ def lookup(
         return result["location"]["lat"], result["location"]["lng"]
     else:
         raise ValueError("google geolocation: " + str(result))
-
-
-if __name__.endswith("__main__"):
-    from datetime import datetime, timezone
-    from sqlite3 import connect
-    import sys
-    from .zx303proto import *
-    from .zx303proto import WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING
-
-    db = connect(sys.argv[1])
-    c = db.cursor()
-    c.execute(
-        """select tstamp, packet from events
-            where proto in (?, ?)""",
-        (proto_name(WIFI_POSITIONING), proto_name(WIFI_OFFLINE_POSITIONING)),
-    )
-    init({"googlemaps": {"accesstoken": sys.argv[2]}})
-    count = 0
-    for timestamp, packet in c:
-        obj = parse_message(packet)
-        print(obj)
-        avlat, avlon = lookup(obj.mcc, obj.mnc, obj.gsm_cells, obj.wifi_aps)
-        print(
-            "{} {:+#010.8g},{:+#010.8g}".format(
-                datetime.fromtimestamp(timestamp), avlat, avlon
-            )
-        )
-        count += 1
-        if count > 10:
-            break

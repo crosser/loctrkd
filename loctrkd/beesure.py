@@ -39,7 +39,6 @@ __all__ = (
     "proto_handled",
     "parse_message",
     "probe_buffer",
-    "proto_name",
     "DecodeError",
     "Respond",
 )
@@ -139,6 +138,14 @@ def enframe(buffer: bytes, imei: Optional[str] = None) -> bytes:
 
 
 ### Parser/Constructor ###
+
+
+class classproperty:
+    def __init__(self, f: Callable[[Any], str]) -> None:
+        self.f = f
+
+    def __get__(self, obj: Any, owner: Any) -> str:
+        return self.f(owner)
 
 
 class DecodeError(Exception):
@@ -278,13 +285,20 @@ class BeeSurePkt(ProtoClass):
         # Overridden in subclasses, otherwise command verb only
         return ""
 
-    @property
-    def PROTO(self) -> str:
+    @classproperty
+    def PROTO(cls: "BeeSurePkt") -> str:
+        """Name of the class without possible .In / .Out suffix"""
+        proto: str
         try:
-            proto, _ = self.__class__.__name__.split(".")
+            proto, _ = cls.__name__.split(".")
         except ValueError:
-            proto = self.__class__.__name__
+            proto = cls.__name__
         return proto
+
+    @classmethod
+    def proto_name(cls) -> str:
+        """Name of the command as used externally"""
+        return PROTO_PREFIX + cls.PROTO[:16]
 
     @property
     def packed(self) -> bytes:
@@ -553,12 +567,6 @@ def proto_handled(proto: str) -> bool:
     return proto.startswith(PROTO_PREFIX)
 
 
-def proto_name(obj: Union[Type[BeeSurePkt], BeeSurePkt]) -> str:
-    return PROTO_PREFIX + (
-        obj.__class__.__name__ if isinstance(obj, BeeSurePkt) else obj.__name__
-    )
-
-
 def proto_of_message(packet: bytes) -> str:
     return PROTO_PREFIX + packet[20:-1].split(b",")[0].decode()
 
@@ -622,7 +630,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
 
 def exposed_protos() -> List[Tuple[str, bool]]:
     return [
-        (proto_name(cls)[:16], False)
+        (cls.proto_name(), False)
         for cls in CLASSES.values()
         if hasattr(cls, "rectified")
     ]

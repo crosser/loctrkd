@@ -52,27 +52,3 @@ def lookup(
     lc.execute("""detach database mem""")
     lc.close()
     return avlat, avlon
-
-
-if __name__.endswith("__main__"):
-    from datetime import datetime, timezone
-    import sys
-    from .zx303proto import *
-    from .zx303proto import WIFI_POSITIONING, WIFI_OFFLINE_POSITIONING
-
-    db = connect(sys.argv[1])
-    c = db.cursor()
-    c.execute(
-        """select tstamp, packet from events
-            where proto in (?, ?)""",
-        (proto_name(WIFI_POSITIONING), proto_name(WIFI_OFFLINE_POSITIONING)),
-    )
-    init({"opencellid": {"dbfn": sys.argv[2]}})
-    for timestamp, packet in c:
-        obj = parse_message(packet)
-        avlat, avlon = lookup(obj.mcc, obj.mnc, obj.gsm_cells, obj.wifi_aps)
-        print(
-            "{} {:+#010.8g},{:+#010.8g}".format(
-                datetime.fromtimestamp(timestamp), avlat, avlon
-            )
-        )

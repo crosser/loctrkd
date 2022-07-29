@@ -44,12 +44,11 @@ __all__ = (
     "proto_handled",
     "parse_message",
     "probe_buffer",
-    "proto_name",
     "DecodeError",
     "Respond",
 )
 
-PROTO_PREFIX = "ZX:"
+PROTO_PREFIX: str = "ZX:"
 
 ### Deframer ###
 
@@ -292,6 +291,11 @@ class GPS303Pkt(ProtoClass):
     def out_encode(self) -> bytes:
         # Overridden in subclasses, otherwise make empty payload
         return b""
+
+    @classmethod
+    def proto_name(cls) -> str:
+        """Name of the command as used externally"""
+        return (PROTO_PREFIX + cls.__name__)[:16]
 
     @property
     def packed(self) -> bytes:
@@ -826,14 +830,8 @@ def proto_handled(proto: str) -> bool:
     return proto.startswith(PROTO_PREFIX)
 
 
-def proto_name(obj: Union[Type[GPS303Pkt], GPS303Pkt]) -> str:
-    return PROTO_PREFIX + (
-        obj.__class__.__name__ if isinstance(obj, GPS303Pkt) else obj.__name__
-    )
-
-
 def proto_of_message(packet: bytes) -> str:
-    return proto_name(CLASSES.get(packet[1], UNKNOWN))
+    return CLASSES.get(packet[1], UNKNOWN).proto_name()
 
 
 def imei_from_packet(packet: bytes) -> Optional[str]:
@@ -893,7 +891,7 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> GPS303Pkt:
 
 def exposed_protos() -> List[Tuple[str, bool]]:
     return [
-        (proto_name(cls)[:16], cls.RESPOND is Respond.EXT)
+        (cls.proto_name(), cls.RESPOND is Respond.EXT)
         for cls in CLASSES.values()
         if hasattr(cls, "rectified")
     ]

@@ -80,8 +80,16 @@ def exposed_protos() -> List[Tuple[str, bool]]:
     return [item for pmod in pmods for item in pmod.exposed_protos()]
 
 
-class Report(SimpleNamespace):
+class Report:
     TYPE: str
+
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__
+            + "("
+            + ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
+            + ")"
+        )
 
     @property
     def json(self) -> str:
@@ -102,18 +110,16 @@ class CoordReport(Report):
         speed: float,
         direction: float,
         latitude: float,
-        longitude: float
+        longitude: float,
     ) -> None:
-        super().__init__(
-            devtime=devtime,
-            battery_percentage=battery_percentage,
-            accuracy=accuracy,
-            altitude=altitude,
-            speed=speed,
-            direction=direction,
-            latitude=latitude,
-            longitude=longitude,
-        )
+        self.devtime = devtime
+        self.battery_percentage = battery_percentage
+        self.accuracy = accuracy
+        self.altitude = altitude
+        self.speed = speed
+        self.direction = direction
+        self.latitude = latitude
+        self.longitude = longitude
 
 
 class HintReport(Report):
@@ -127,20 +133,18 @@ class HintReport(Report):
         mcc: int,
         mnc: int,
         gsm_cells: List[Tuple[int, int, int]],
-        wifi_aps: List[Tuple[str, str, int]]
+        wifi_aps: List[Tuple[str, str, int]],
     ) -> None:
-        super().__init__(
-            devtime=devtime,
-            battery_percentage=battery_percentage,
-            mcc=mcc,
-            mnc=mnc,
-            gsm_cells=gsm_cells,
-            wifi_aps=wifi_aps,
-        )
+        self.devtime = devtime
+        self.battery_percentage = battery_percentage
+        self.mcc = mcc
+        self.mnc = mnc
+        self.gsm_cells = gsm_cells
+        self.wifi_aps = wifi_aps
 
 
 class StatusReport(Report):
     TYPE = "status"
 
     def __init__(self, *, battery_percentage: int) -> None:
-        super().__init__(battery_percentage=battery_percentage)
+        self.battery_percentage = battery_percentage

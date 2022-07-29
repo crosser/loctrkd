@@ -88,6 +88,10 @@ class ProtoClass(Protocol, metaclass=_MetaProto):
     IN_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
     OUT_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
 
+    @classmethod
+    def proto_name(cls) -> str:
+        ...
+
     class In:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             ...

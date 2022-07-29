@@ -6,6 +6,7 @@ from importlib import import_module
 from logging import getLogger
 from os import umask
 from struct import pack
+from typing import cast, List, Tuple
 import zmq
 
 from . import common
@@ -15,8 +16,30 @@ from .zmsg import Bcast, Rept, Resp, topic
 log = getLogger("loctrkd/rectifier")
 
 
+class QryModule:
+    @staticmethod
+    def init(conf: ConfigParser) -> None:
+        ...
+
+    @staticmethod
+    def shut() -> None:
+        ...
+
+    @staticmethod
+    def lookup(
+        mcc: int,
+        mnc: int,
+        gsm_cells: List[Tuple[int, int, int]],
+        wifi_aps: List[Tuple[str, int]],
+    ) -> Tuple[float, float]:
+        ...
+
+
 def runserver(conf: ConfigParser) -> None:
-    qry = import_module("." + conf.get("rectifier", "lookaside"), __package__)
+    qry = cast(
+        QryModule,
+        import_module("." + conf.get("rectifier", "lookaside"), __package__),
+    )
     qry.init(conf)
     proto_needanswer = dict(common.exposed_protos())
     # Is this https://github.com/zeromq/pyzmq/issues/1627 still not fixed?!
@@ -50,7 +73,10 @@ def runserver(conf: ConfigParser) -> None:
             elif isinstance(rect, HintReport):
                 try:
                     lat, lon = qry.lookup(
-                        rect.mcc, rect.mnc, rect.gsm_cells, rect.wifi_aps
+                        rect.mcc,
+                        rect.mnc,
+                        rect.gsm_cells,
+                        list((mac, strng) for _, mac, strng in rect.wifi_aps),
                     )
                     log.debug(
                         "Approximated lat=%s, lon=%s for %s", lat, lon, rect
