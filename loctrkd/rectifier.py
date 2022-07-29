@@ -92,10 +92,10 @@ def runserver(conf: ConfigParser) -> None:
                     rept = CoordReport(
                         devtime=rect.devtime,
                         battery_percentage=rect.battery_percentage,
-                        accuracy=-1,
-                        altitude=-1,
-                        speed=-1,
-                        direction=-1,
+                        accuracy=None,
+                        altitude=None,
+                        speed=None,
+                        direction=None,
                         latitude=lat,
                         longitude=lon,
                     )

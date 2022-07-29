@@ -1,20 +1,32 @@
 """ sqlite event store """
 
+from datetime import datetime
+from json import dumps
 from sqlite3 import connect, OperationalError
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
-__all__ = "fetch", "initdb", "stow"
+__all__ = "fetch", "initdb", "stow", "stowloc"
 
 DB = None
 
-SCHEMA = """create table if not exists events (
+SCHEMA = (
+    """create table if not exists events (
     tstamp real not null,
     imei text,
     peeraddr text not null,
     is_incoming int not null default TRUE,
     proto text not null,
     packet blob
-)"""
+)""",
+    """create table if not exists reports (
+    imei text,
+    devtime text not null,
+    accuracy real,
+    latitude real,
+    longitude real,
+    remainder text
+)""",
+)
 
 
 def initdb(dbname: str) -> None:
@@ -26,7 +38,8 @@ def initdb(dbname: str) -> None:
                 is_incoming int not null default TRUE"""
         )
     except OperationalError:
-        DB.execute(SCHEMA)
+        for stmt in SCHEMA:
+            DB.execute(stmt)
 
 
 def stow(**kwargs: Any) -> None:
@@ -48,6 +61,30 @@ def stow(**kwargs: Any) -> None:
                 (tstamp, imei, peeraddr, proto, packet, is_incoming)
                 values
                 (:when, :imei, :peeraddr, :proto, :packet, :is_incoming)
+        """,
+        parms,
+    )
+    DB.commit()
+
+
+def stowloc(**kwargs: Dict[str, Any]) -> None:
+    assert DB is not None
+    parms = {
+        k: kwargs.pop(k) if k in kwargs else v
+        for k, v in (
+            ("imei", None),
+            ("devtime", str(datetime.now())),
+            ("accuracy", None),
+            ("latitude", None),
+            ("longitude", None),
+        )
+    }
+    parms["remainder"] = dumps(kwargs)
+    DB.execute(
+        """insert or ignore into reports
+                (imei, devtime, accuracy, latitude, longitude, remainder)
+                values
+                (:imei, :devtime, :accuracy, :latitude, :longitude, :remainder)
         """,
         parms,
     )

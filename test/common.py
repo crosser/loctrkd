@@ -51,6 +51,7 @@ class TestWithServers(TestCase):
         }
         self.conf["storage"] = {
             "dbfn": self.tmpfilebase + ".storage.sqlite",
+            "events": "yes",
         }
         self.conf["opencellid"] = {
             "dbfn": self.tmpfilebase + ".opencellid.sqlite",

@@ -372,9 +372,9 @@ class _GPS_POSITIONING(GPS303Pkt):
     def rectified(self) -> CoordReport:  # JSON-able dict
         return CoordReport(
             devtime=str(self.devtime),
-            battery_percentage=-1,
-            accuracy=-1.0,
-            altitude=-1.0,
+            battery_percentage=None,
+            accuracy=None,
+            altitude=None,
             speed=self.speed,
             direction=self.heading,
             latitude=self.latitude,
@@ -503,7 +503,7 @@ class _WIFI_POSITIONING(GPS303Pkt):
     def rectified(self) -> HintReport:
         return HintReport(
             devtime=str(self.devtime),
-            battery_percentage=-1,
+            battery_percentage=None,
             mcc=self.mcc,
             mnc=self.mnc,
             gsm_cells=self.gsm_cells,
