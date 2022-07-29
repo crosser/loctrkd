@@ -87,7 +87,9 @@ class Report:
         return (
             self.__class__.__name__
             + "("
-            + ", ".join([f"{k}={v}" for k, v in self.__dict__.items()])
+            + ", ".join(
+                [f"{k}={v.__repr__()}" for k, v in self.__dict__.items()]
+            )
             + ")"
         )
 

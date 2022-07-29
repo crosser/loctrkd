@@ -51,7 +51,7 @@ def runserver(conf: ConfigParser) -> None:
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
     zpub = zctx.socket(zmq.PUB)  # type: ignore
-    zpub.connect(conf.get("rectifier", "publishurl"))
+    zpub.bind(conf.get("rectifier", "publishurl"))
 
     try:
         while True:
@@ -89,19 +89,21 @@ def runserver(conf: ConfigParser) -> None:
                         )
                         log.debug("Sending reponse %s", resp)
                         zpush.send(resp.packed)
+                    rept = CoordReport(
+                        devtime=rect.devtime,
+                        battery_percentage=rect.battery_percentage,
+                        accuracy=-1,
+                        altitude=-1,
+                        speed=-1,
+                        direction=-1,
+                        latitude=lat,
+                        longitude=lon,
+                    )
+                    log.debug("Sending report %s", rept)
                     zpub.send(
                         Rept(
                             imei=zmsg.imei,
-                            payload=CoordReport(
-                                devtime=rect.devtime,
-                                battery_percentage=rect.battery_percentage,
-                                accuracy=-1,
-                                altitude=-1,
-                                speed=-1,
-                                direction=-1,
-                                latitude=lat,
-                                longitude=lon,
-                            ).json,
+                            payload=rept.json,
                         ).packed
                     )
                 except Exception as e:
