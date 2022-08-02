@@ -4,7 +4,7 @@ import ipaddress as ip
 from struct import pack, unpack
 from typing import Any, cast, Optional, Tuple, Type, Union
 
-__all__ = "Bcast", "Resp", "topic"
+__all__ = "Bcast", "Resp", "topic", "rtopic"
 
 
 def pack_peer(  # 18 bytes
@@ -98,6 +98,10 @@ def topic(
     return pack("B16s", is_incoming, proto.encode()) + (
         b"" if imei is None else pack("16s", imei.encode())
     )
+
+
+def rtopic(imei: str) -> bytes:
+    return pack("16s", imei.encode())
 
 
 class Bcast(_Zmsg):

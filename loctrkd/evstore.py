@@ -1,8 +1,8 @@
 """ sqlite event store """
 
 from datetime import datetime
-from json import dumps
-from sqlite3 import connect, OperationalError
+from json import dumps, loads
+from sqlite3 import connect, OperationalError, Row
 from typing import Any, Dict, List, Tuple
 
 __all__ = "fetch", "initdb", "stow", "stowloc"
@@ -32,14 +32,9 @@ SCHEMA = (
 def initdb(dbname: str) -> None:
     global DB
     DB = connect(dbname)
-    try:
-        DB.execute(
-            """alter table events add column
-                is_incoming int not null default TRUE"""
-        )
-    except OperationalError:
-        for stmt in SCHEMA:
-            DB.execute(stmt)
+    DB.row_factory = Row
+    for stmt in SCHEMA:
+        DB.execute(stmt)
 
 
 def stow(**kwargs: Any) -> None:
@@ -91,23 +86,20 @@ def stowloc(**kwargs: Dict[str, Any]) -> None:
     DB.commit()
 
 
-def fetch(
-    imei: str, matchlist: List[Tuple[bool, str]], backlog: int
-) -> List[Tuple[bool, float, str, bytes]]:
-    # matchlist is a list of tuples (is_incoming, proto)
-    # returns a list of tuples (is_incoming, timestamp, packet)
+def fetch(imei: str, backlog: int) -> List[Dict[str, Any]]:
     assert DB is not None
-    selector = " or ".join(
-        (f"(is_incoming = ? and proto = ?)" for _ in range(len(matchlist)))
-    )
     cur = DB.cursor()
     cur.execute(
-        f"""select is_incoming, tstamp, proto, packet from events
-                    where ({selector}) and imei = ?
-                    order by tstamp desc limit ?""",
-        tuple(item for sublist in matchlist for item in sublist)
-        + (imei, backlog),
+        """select imei, devtime, accuracy, latitude, longitude, remainder
+                    from reports where imei = ?
+                    order by devtime desc limit ?""",
+        (imei, backlog),
     )
-    result = list(cur)
+    result = []
+    for row in cur:
+        dic = dict(row)
+        remainder = loads(dic.pop("remainder"))
+        dic.update(remainder)
+        result.append(dic)
     cur.close()
     return list(reversed(result))
