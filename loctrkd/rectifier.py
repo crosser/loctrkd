@@ -51,7 +51,9 @@ def runserver(conf: ConfigParser) -> None:
     zpush = zctx.socket(zmq.PUSH)  # type: ignore
     zpush.connect(conf.get("collector", "listenurl"))
     zpub = zctx.socket(zmq.PUB)  # type: ignore
+    oldmask = umask(0o117)
     zpub.bind(conf.get("rectifier", "publishurl"))
+    umask(oldmask)
 
     try:
         while True:
