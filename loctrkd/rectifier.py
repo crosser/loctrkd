@@ -107,7 +107,7 @@ def runserver(conf: ConfigParser) -> None:
                         ).packed
                     )
                 except Exception as e:
-                    log.warning(
+                    log.exception(
                         "Lookup for %s rectified as %s resulted in %s",
                         msg,
                         rect,
