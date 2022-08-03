@@ -601,22 +601,28 @@ def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
     """From a packet (without framing bytes) derive the XXX.In object"""
     toskip, vendor, imei, datalength = _framestart(packet)
     bsplits = packet[20:-1].split(b",", 1)
-    if len(bsplits) == 2:
+    try:
         proto = bsplits[0].decode("ascii")
+    except UnicodeDecodeError:
+        proto = str(bsplits[0])
+    if len(bsplits) == 2:
         rest = bsplits[1]
     else:
-        proto = ""
-        rest = bsplits[0]
+        rest = b""
     if proto in CLASSES:
         cls = CLASSES[proto].In if is_incoming else CLASSES[proto].Out
         payload = (
-            rest if cls.BINARY else rest.decode("Windows-1252").split(",")
+            # Some people encode their SSIDs in non-utf8
+            rest
+            if cls.BINARY
+            else rest.decode("Windows-1252").split(",")
         )
         try:
             return cls(vendor, imei, datalength, payload)
         except (DecodeError, ValueError, IndexError) as e:
             cause: Union[DecodeError, ValueError, IndexError] = e
     else:
+        payload = rest
         cause = ValueError(f"Proto {proto} is unknown")
     if is_incoming:
         retobj = UNKNOWN.In(vendor, imei, datalength, payload)
