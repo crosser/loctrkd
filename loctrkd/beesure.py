@@ -207,6 +207,7 @@ class Respond(Enum):
 
 
 class BeeSurePkt(ProtoClass):
+    BINARY = False
     RESPOND = Respond.NON  # Do not send anything back by default
     IN_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
     OUT_KWARGS: Tuple[Tuple[str, Callable[[Any], Any], Any], ...] = ()
@@ -501,6 +502,7 @@ class SOS3(_SET_PHONE):
 
 
 class TK(BeeSurePkt):
+    BINARY = True
     RESPOND = Respond.INL
 
     def in_decode(self, *args: Any) -> None:
@@ -598,27 +600,24 @@ def probe_buffer(buffer: bytes) -> bool:
 def parse_message(packet: bytes, is_incoming: bool = True) -> BeeSurePkt:
     """From a packet (without framing bytes) derive the XXX.In object"""
     toskip, vendor, imei, datalength = _framestart(packet)
-    try:
-        splits = packet[20:-1].decode().split(",")
-        proto = splits[0] if len(splits) > 0 else ""
-        payload: Union[List[str], bytes] = splits[1:]
-    except UnicodeDecodeError:
-        bsplits = packet[20:-1].split(b",", 1)
-        if len(bsplits) == 2:
-            proto = bsplits[0].decode("ascii")
-            payload = bsplits[1]
-    if proto not in CLASSES:
-        cause: Union[DecodeError, ValueError, IndexError] = ValueError(
-            f"Proto {proto} is unknown"
-        )
+    bsplits = packet[20:-1].split(b",", 1)
+    if len(bsplits) == 2:
+        proto = bsplits[0].decode("ascii")
+        rest = bsplits[1]
     else:
+        proto = ""
+        rest = bsplits[0]
+    if proto in CLASSES:
+        cls = CLASSES[proto].In if is_incoming else CLASSES[proto].Out
+        payload = (
+            rest if cls.BINARY else rest.decode("Windows-1252").split(",")
+        )
         try:
-            if is_incoming:
-                return CLASSES[proto].In(vendor, imei, datalength, payload)
-            else:
-                return CLASSES[proto].Out(vendor, imei, datalength, payload)
+            return cls(vendor, imei, datalength, payload)
         except (DecodeError, ValueError, IndexError) as e:
-            cause = e
+            cause: Union[DecodeError, ValueError, IndexError] = e
+    else:
+        cause = ValueError(f"Proto {proto} is unknown")
     if is_incoming:
         retobj = UNKNOWN.In(vendor, imei, datalength, payload)
     else:
