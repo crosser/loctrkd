@@ -1,3 +1,52 @@
+loctrkd (1.90) experimental; urgency=medium
+
+  * move stream parser/deframer to the protocol module
+  * change error reporting and fix bugs
+  * collector: get rid of more protocol specifics
+  * Initial multiprotocol support
+  * improve diagnistic message about left data
+  * Multiprotocol support in zmq messages and storage
+  * Rename gps303proto to zx303proto
+  * rename gps303 -> loctrkd
+  * Update package name and links in the README
+  * debian: this replaces gps303
+  * rename deb package, adjust .gitignore
+  * WIP: beesure protocol
+  * cleanup framing/deframing of beesure
+  * test: more robust version check for tools (black)
+  * beesure: add ICCID proto
+  * function `proto_handled()` in proto modules
+  * make qry work again
+  * beesure: decode wifi aps
+  * watch: fix check for proto handling
+  * beesure: location info parser
+  * beesure: don't mess with timezones for devtime
+  * Revive command sender and implement some commands
+  * collector: close old connection on new login
+  * beesure: remove the PROTO attribute
+  * WIP converting wsgateway to multiprotocols
+  * beesure: implement phone book commands
+  * beesure: handle "TK" (Voice message)
+  * qry: initial support for saving data in a file
+  * beesure: implment MESSAGE command
+  * collector: streamline tracking of polled fd-s
+  * mkgpx: quick temp switch to beesure proto
+  * protocols: make "interface" module
+  * rename `lookaside` to `rectifier`
+  * Adjust config to changing messaging topology
+  * rectifier: add PUB zmq socket
+  * protocols: introduce method `rectified()`
+  * abstract protocol selection in `common`
+  * rectifier: lookaside based on rectified objects
+  * Convert recitifier to multiprotocol support
+  * Cleanup some of the  types
+  * watch: watch for both raw and rectified feeds
+  * storage: save both raw and rectified reports
+  * wsgateway: switch to the use of cooked reports
+  * rectifier: log.exception on lookaside crash
+
+ -- Eugene Crosser <crosser@average.org>  Wed, 03 Aug 2022 10:45:34 +0200
+
 loctrkd (1.02) experimental; urgency=medium
 
   * collector: prevent two active clients share IMEI
