@@ -1,8 +1,12 @@
-# A server to collect data from zx303 ZhongXun Topin Locator
+# A server to collect data from GPS Locators
 
-zx303 GPS+GPRS module is a cheap and featureful GPS tracker for pets,
-children, elderly family members, and, of course, illegal tracking
-of people and objects, though the latter absolutely must not be done.
+Supported:
+
+* zx303 ZhongXun Topin Locator
+  zx303 GPS+GPRS module is a cheap and featureful GPS tracker for pets,
+  children, elderly family members, and, of course, illegal tracking
+  of people and objects, though the latter absolutely must not be done.
+* Some watches-locators, sometimes identified as D99 or similar
 
 ## Introduction
 
