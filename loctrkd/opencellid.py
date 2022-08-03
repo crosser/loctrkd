@@ -46,7 +46,7 @@ def lookup(
     lc.execute("""detach database mem""")
     lc.close()
     if not data:
-        return 0.0, 0.0
+        raise ValueError("No location data found in opencellid")
     sumsig = sum([1 / sig for _, _, sig in data])
     nsigs = [1 / sig / sumsig for _, _, sig in data]
     avlat = sum([lat * nsig for (lat, _, _), nsig in zip(data, nsigs)])
