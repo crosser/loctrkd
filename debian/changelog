@@ -1,3 +1,9 @@
+loctrkd (1.91) experimental; urgency=medium
+
+  * opencellid: detach mem db when lookup failed
+
+ -- Eugene Crosser <crosser@average.org>  Wed, 03 Aug 2022 12:20:37 +0200
+
 loctrkd (1.90) experimental; urgency=medium
 
   * move stream parser/deframer to the protocol module
