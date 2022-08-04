@@ -2,6 +2,7 @@
 Lookaside backend to query local opencellid database
 """
 
+from configparser import ConfigParser
 from sqlite3 import connect
 from typing import Any, Dict, List, Tuple
 
@@ -10,7 +11,7 @@ __all__ = "init", "lookup"
 ldb = None
 
 
-def init(conf: Dict[str, Any]) -> None:
+def init(conf: ConfigParser) -> None:
     global ldb
     ldb = connect(conf["opencellid"]["dbfn"])
 
