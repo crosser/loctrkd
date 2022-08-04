@@ -1,3 +1,12 @@
+loctrkd (1.94) experimental; urgency=medium
+
+  * rectifier: set umask for zmq publish socket
+  * googlemaps: add code for manual testing
+  * beesure: consider valid if enough satellites
+  * lookaside returns accuracy too
+
+ -- Eugene Crosser <crosser@average.org>  Fri, 05 Aug 2022 00:43:59 +0200
+
 loctrkd (1.93) experimental; urgency=medium
 
   * beesure: fix parsing broken by prefious fix
