@@ -23,7 +23,7 @@ def shut() -> None:
 
 def lookup(
     mcc: int, mnc: int, gsm_cells: List[Tuple[int, int, int]], __: Any
-) -> Tuple[float, float]:
+) -> Tuple[float, float, float]:
     assert ldb is not None
     lc = ldb.cursor()
     lc.execute("""attach database ":memory:" as mem""")
@@ -52,4 +52,4 @@ def lookup(
     nsigs = [1 / sig / sumsig for _, _, sig in data]
     avlat = sum([lat * nsig for (lat, _, _), nsig in zip(data, nsigs)])
     avlon = sum([lon * nsig for (_, lon, _), nsig in zip(data, nsigs)])
-    return avlat, avlon
+    return avlat, avlon, 99.9  # TODO estimate accuracy for real

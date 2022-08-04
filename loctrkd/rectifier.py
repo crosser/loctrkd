@@ -31,7 +31,7 @@ class QryModule:
         mnc: int,
         gsm_cells: List[Tuple[int, int, int]],
         wifi_aps: List[Tuple[str, int]],
-    ) -> Tuple[float, float]:
+    ) -> Tuple[float, float, float]:
         ...
 
 
@@ -74,14 +74,18 @@ def runserver(conf: ConfigParser) -> None:
                 zpub.send(Rept(imei=zmsg.imei, payload=rect.json).packed)
             elif isinstance(rect, HintReport):
                 try:
-                    lat, lon = qry.lookup(
+                    lat, lon, acc = qry.lookup(
                         rect.mcc,
                         rect.mnc,
                         rect.gsm_cells,
                         list((mac, strng) for _, mac, strng in rect.wifi_aps),
                     )
                     log.debug(
-                        "Approximated lat=%s, lon=%s for %s", lat, lon, rect
+                        "Approximated lat=%s, lon=%s, acc=%s for %s",
+                        lat,
+                        lon,
+                        acc,
+                        rect,
                     )
                     if proto_needanswer.get(zmsg.proto, False):
                         resp = Resp(
@@ -94,7 +98,7 @@ def runserver(conf: ConfigParser) -> None:
                     rept = CoordReport(
                         devtime=rect.devtime,
                         battery_percentage=rect.battery_percentage,
-                        accuracy=None,
+                        accuracy=acc,
                         altitude=None,
                         speed=None,
                         direction=None,

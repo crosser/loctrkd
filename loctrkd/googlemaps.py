@@ -53,10 +53,14 @@ def lookup(
     mnc: int,
     gsm_cells: List[Tuple[int, int, int]],
     wifi_aps: List[Tuple[str, int]],
-) -> Tuple[float, float]:
+) -> Tuple[float, float, float]:
     result = _lookup(mcc, mnc, gsm_cells, wifi_aps)
     if "location" in result:
-        return result["location"]["lat"], result["location"]["lng"]
+        return (
+            result["location"]["lat"],
+            result["location"]["lng"],
+            result["accuracy"],
+        )
     else:
         raise ValueError("google geolocation: " + str(result))
 
