@@ -373,7 +373,10 @@ class _LOC_DATA(BeeSurePkt):
         self.longitude = p.lon * p.eorw
 
     def rectified(self) -> Report:
-        if self.gps_valid:
+        # self.gps_valid is supposed to mean it, but it does not. Perfectly
+        # good looking coordinates, with ten satellites, still get 'V'.
+        # I suspect that in reality, 'A' means "hint data is absent".
+        if self.gps_valid or self.num_of_sats > 3:
             return CoordReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
