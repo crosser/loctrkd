@@ -312,6 +312,14 @@ class UNKNOWN(BeeSurePkt):
     pass
 
 
+class _SET_PHONE(BeeSurePkt):
+    OUT_KWARGS = (("phonenumber", str, ""),)
+
+    def out_encode(self) -> str:
+        self.phonenumber: str
+        return self.phonenumber
+
+
 class _LOC_DATA(BeeSurePkt):
     def in_decode(self, *args: str) -> None:
         p = SimpleNamespace()
@@ -402,11 +410,23 @@ class AL(_LOC_DATA):
     RESPOND = Respond.INL
 
 
+class CALL(_SET_PHONE):
+    pass
+
+
+class CENTER(_SET_PHONE):
+    pass
+
+
 class CONFIG(BeeSurePkt):
     pass
 
 
 class CR(BeeSurePkt):
+    pass
+
+
+class FIND(BeeSurePkt):
     pass
 
 
@@ -438,11 +458,22 @@ class LK(BeeSurePkt):
         return "LK"
 
 
+class LZ(BeeSurePkt):
+    OUT_KWARGS = (("language", int, 1), ("timezone", int, 0))
+
+    def out_encode(self) -> str:
+        return f"{self.language},{self.timezone}"
+
+
 class MESSAGE(BeeSurePkt):
     OUT_KWARGS = (("message", str, ""),)
 
     def out_encode(self) -> str:
         return str(self.message.encode("utf_16_be").hex())
+
+
+class MONITOR(BeeSurePkt):
+    pass
 
 
 class _PHB(BeeSurePkt):
@@ -482,14 +513,6 @@ class SOS(BeeSurePkt):
     def out_encode(self) -> str:
         self.phonenumbers: List[str]
         return ",".join(self.phonenumbers)
-
-
-class _SET_PHONE(BeeSurePkt):
-    OUT_KWARGS = (("phonenumber", str, ""),)
-
-    def out_encode(self) -> str:
-        self.phonenumber: str
-        return self.phonenumber
 
 
 class SOS1(_SET_PHONE):
@@ -537,6 +560,13 @@ class UD(_LOC_DATA):
 
 class UD2(_LOC_DATA):
     pass
+
+
+class UPLOAD(BeeSurePkt):
+    OUT_KWARGS = (("interval", int, 600),)
+
+    def out_encode(self) -> str:
+        return str(self.interval)
 
 
 # Build dicts protocol number -> class and class name -> protocol number
