@@ -14,6 +14,7 @@ ldb = None
 def init(conf: ConfigParser) -> None:
     global ldb
     ldb = connect(conf["opencellid"]["dbfn"])
+    ldb.execute("create temp table seen (locac int, cellid int, signal int)")
 
 
 def shut() -> None:
@@ -26,25 +27,24 @@ def lookup(
 ) -> Tuple[float, float, float]:
     assert ldb is not None
     lc = ldb.cursor()
-    lc.execute("""attach database ":memory:" as mem""")
-    lc.execute("create table mem.seen (locac int, cellid int, signal int)")
     lc.executemany(
-        """insert into mem.seen (locac, cellid, signal)
-                        values (?, ?, ?)""",
+        "insert into seen (locac, cellid, signal) values (?, ?, ?)",
         gsm_cells,
     )
     ldb.commit()
     lc.execute(
         """select c.lat, c.lon, s.signal
-                  from main.cells c, mem.seen s
+                  from cells c, seen s
                   where c.mcc = ?
+                  and c.net = ?
                   and c.area = s.locac
                   and c.cell = s.cellid""",
-        (mcc,),
+        (mcc, mnc),
     )
     data = list(lc.fetchall())
-    # lc.execute("drop table mem.seen")
-    lc.execute("""detach database mem""")
+    # This should be faster than dropping and recreating the temp table
+    # https://www.sqlite.org/lang_delete.html#the_truncate_optimization
+    lc.execute("delete from seen")
     lc.close()
     if not data:
         raise ValueError("No location data found in opencellid")
