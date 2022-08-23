@@ -46,7 +46,7 @@ class TestWithServers(TestCase):
         _, self.tmpfilebase = mkstemp()
         self.conf = ConfigParser()
         self.conf["common"] = {
-            "protocols": "zx303proto",
+            "protocols": "zx303proto,beesure",
         }
         self.conf["collector"] = {
             "port": str(freeports[0]),

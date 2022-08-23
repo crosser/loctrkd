@@ -116,7 +116,7 @@ class Stream:
             else:
                 msgs.append(
                     f"Packet does not end with ']'"
-                    f" at {self.datalen+20}: {self.buffer=!r}"
+                    f" at {self.datalen+20}: {self.buffer[:64]=!r}"
                 )
             self.buffer = self.buffer[self.datalen + 21 :]
             self.datalen = 0
@@ -602,8 +602,15 @@ def proto_handled(proto: str) -> bool:
     return proto.startswith(PROTO_PREFIX)
 
 
+def _local_proto(packet: bytes) -> str:
+    try:
+        return packet[20:-1].split(b",")[0].decode()
+    except UnicodeDecodeError:
+        return "UNKNOWN"
+
+
 def proto_of_message(packet: bytes) -> str:
-    return PROTO_PREFIX + packet[20:-1].split(b",")[0].decode()
+    return PROTO_PREFIX + _local_proto(packet)
 
 
 def imei_from_packet(packet: bytes) -> Optional[str]:
@@ -618,7 +625,7 @@ def is_goodbye_packet(packet: bytes) -> bool:
 
 
 def inline_response(packet: bytes) -> Optional[bytes]:
-    proto = packet[20:-1].split(b",")[0].decode()
+    proto = _local_proto(packet)
     if proto in CLASSES:
         cls = CLASSES[proto]
         if cls.RESPOND is Respond.INL:
