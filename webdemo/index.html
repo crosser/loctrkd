@@ -219,8 +219,9 @@
 </script>
 
 </head>
-<body onload="init();">
-	<div style="width:100%; height:2%" id="hdr">
+<body onload="init();" style="height: 100%; margin: 0; display: flex;
+				flex-direction: column; font-size: 2.0vh;">
+	<div style="margin: 0;" id="hdr">
 		<input id="imei" type="text" name="imei"
 		 size="16" maxlength="16" placeholder="Enter IMEI"
 		 autocomplete="off" onkeyup="handleKey(event)">
@@ -229,18 +230,15 @@
 		<input type="button" id="clear" name="clear" value="Clear"
 		 onclick="sendIMEI(true)" disabled>
 		<span id="subslist"></span>
-		<span style="float:right">
-			| <span id="devstatus"></span>
-			| <span id="tstamp"></span>
-		</span>
 	</div>
-	<div style="width:100%; height:97%" id="map"></div>
-	<div style="width:100%; height:1%">
-		<span id="sts"></span>
-		<span id="about" style="float:right">
+	<div style="flex-grow: 1;" id="map"></div>
+	<div style="display: flex; flex-direction: row; width: 100%;">
+		<div id="sts" style="flex: none;"></div>
+		| <div id="devstatus" style="flex: auto;"></div>
+		| <div id="tstamp" style="flex: auto;"></div>
+		| <div id="about" style="flex: none; font-size: 2.0vmin;">
 			<a href="http://www.average.org/loctrkd/">
-				http://www.average.org/loctrkd/</a>
-		</span>
+				http://www.average.org/loctrkd/</a></div>
 	</div>
 </body>
 </html>
