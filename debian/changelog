@@ -1,3 +1,15 @@
+loctrkd (1.95) experimental; urgency=medium
+
+  * beesure: implement a few more server commands
+  * wsgateway: clear locations on wsocket open
+  * opencellid: use temp table rather than memory db
+  * tests: separate fuzz tests in two modules
+  * test: add fuzzer for beesure protocol
+  * webdemo: use flexbox css
+  * sysnits & config: update name, remove unneeded bit
+
+ -- Eugene Crosser <crosser@average.org>  Mon, 05 Sep 2022 10:38:56 +0200
+
 loctrkd (1.94) experimental; urgency=medium
 
   * rectifier: set umask for zmq publish socket
