@@ -1,5 +1,3 @@
 # Environment for loctrkd suite
 # Common command-line option for all daemons
 #OPTIONS="-c /etc/loctrkd.conf -d"
-# Which rectifier service to use: opencellid or googleloc
-LOOKASIDE=opencellid

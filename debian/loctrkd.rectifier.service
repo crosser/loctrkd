@@ -1,5 +1,5 @@
 [Unit]
-Description=GPS303 Lookaside Service
+Description=GPS303 Rectifier Service
 PartOf=loctrkd.target
 
 [Service]
