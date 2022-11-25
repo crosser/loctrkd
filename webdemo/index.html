@@ -28,8 +28,9 @@
 	var sts;
 	var ws;
 	var imei;
-	var send;
-	var subslist;
+	var imeilst;
+	var clear;
+	var subunsub;
 	var tstamp;
 	var map;
 	var line;
@@ -41,16 +42,22 @@
 		sts = document.getElementById("sts");
 		sts.innerHTML = "uninitialized";
 		imei = document.getElementById("imei");
-		send = document.getElementById("send");
+		imeilst = document.getElementById("imeilst");
 		clear = document.getElementById("clear");
-		subslist = document.getElementById("subslist");
+		subunsub = document.getElementById("subunsub");
+		refresh = document.getElementById("refresh");
+		msgtxt = document.getElementById("msgtxt");
+		message = document.getElementById("message");
+		poweroff = document.getElementById("poweroff");
 		devstatus = document.getElementById("devstatus");
 		tstamp = document.getElementById("tstamp");
 		if (qimei) {
-			imei.value = qimei;
+			imeis.add(qimei);
 		} else if (limei) {
-			imei.value = limei;
+			imeis.add(limei);
 		}
+		update_imeilst(imeis);
+		change(imei)
 		open_ws();
 	}
 
@@ -138,9 +145,13 @@
 		markers.addMarker(new OpenLayers.Marker(lonLat, icon));
 		map.setCenter(lonLat, 14);
 	}
-	function display_status(msg) {
-		console.log("status " + JSON.stringify(msg));
-		devstatus.innerHTML = "BAT: " + msg.battery;
+	function display_status(battery) {
+		console.log("status " + battery);
+		devstatus.innerHTML = "BAT: " + battery;
+	}
+	function display_cmdresult(result) {
+		console.log("cmdresult " + result);
+		devstatus.innerHTML = result;
 	}
 
 	function open_ws() {
@@ -159,8 +170,8 @@
 		console.log("ws opened " + event);
 		sts.innerHTML = "online";
 		imei.disabled = false;
-		send.disabled = false;
 		clear.disabled = false;
+		change(imei);
 		locations.splice(0);
 		sendIMEI();
 	}
@@ -169,8 +180,13 @@
 		msg = JSON.parse(event.data);
 		if (msg.type === "location") {
 			set_marker(msg);
+			if (msg.battery_percentage) {
+				display_status(msg.battery_percentage);
+			}
 		} else if (msg.type === "status") {
-			display_status(msg);
+			display_status(msg.battery);
+		} else if (msg.type === "cmdresult") {
+			display_cmdresult(msg.result);
 		}
 
 	}
@@ -182,22 +198,14 @@
 		console.log("close " + event);
 		sts.innerHTML = "offline";
 		imei.disabled = true;
-		send.disabled = true;
+		disablebtns(true);
 		clear.disabled = true;
 		setTimeout(open_ws, 5000);
 	}
 
-	function sendIMEI(do_clear) {
-		if (do_clear) {
-			imeis.clear();
-		} else {
-			if (imei.value) {
-				imeis.add(imei.value);
-			}
-		}
+	function sendIMEI() {
 		const imstr = Array.from(imeis).join(",");
 		document.title = imstr;
-		subslist.innerHTML = imstr;
 		var msg = {
 			imei: Array.from(imeis),
 			type: "subscribe",
@@ -206,7 +214,17 @@
 		};
 		console.log("sending" + JSON.stringify(msg));
 		ws.send(JSON.stringify(msg));
-		imei.value = "";
+	}
+
+	function sendCMD(cmd, imei, txt) {
+		var msg = {
+			imei: imei,
+			type: cmd,
+			timestamp: Date.now(),
+			txt: txt
+		};
+		console.log("sending" + JSON.stringify(msg));
+		ws.send(JSON.stringify(msg));
 	}
 
 	function handleKey(evt) {
@@ -216,27 +234,112 @@
 			}
 		}
 	}
+
+	function change(obj) {
+		if (obj.value) {
+			disablebtns(false);
+			if (imeis.has(obj.value)) {
+				subunsub.value = "-";
+				subunsub.title =
+				"Unsubscribe from notifications from "
+					+ obj.value;
+			} else {
+				subunsub.value = "+";
+				subunsub.title =
+				"Subscribe to notifications from "
+					+ obj.value;
+			}
+		} else {
+			disablebtns(true);
+			subunsub.value = "o";
+			subunsub.title = "";
+		}
+	}
+
+	function erase(obj) {
+		imei.value = "";
+		change(imei);
+	}
+
+	function disablebtns(yesorno) {
+		[subunsub, refresh, msgtxt, message,
+		 poweroff].forEach(function(obj) {
+			obj.disabled = yesorno;
+		})
+	}
+	function update_imeilst(imeis) {
+		while (imeilst.firstChild) {
+			imeilst.removeChild(imeilst.lastChild)
+		}
+		imeis.forEach(function(item) {
+			var entry = document.createElement('option');
+			entry.value = item;
+			imeilst.appendChild(entry);
+		})
+		if (imeis.size == 1) {
+			imei.value = imeis.values().next().value;
+		} else {
+			imei.value = "";
+		}
+	}
+
+	function buttonpress(obj) {
+		console.log("button value " + obj.value);
+		console.log("button id " + obj.id);
+		console.log("input value " + imei.value);
+		if (obj.id === "subunsub") {
+			if (obj.value === "+") {
+				imeis.add(imei.value);
+			} else if (obj.value === "-") {
+				imeis.delete(imei.value);
+				imei.value = "";
+			}
+			update_imeilst(imeis);
+			change(imei);
+			sendIMEI();
+		} else {
+			sendCMD(obj.id, imei.value, msgtxt.value);
+			msgtxt.value = "";
+		}
+	}
 </script>
 
 </head>
 <body onload="init();" style="height: 100%; margin: 0; display: flex;
-				flex-direction: column; font-size: 2.0vh;">
+				flex-direction: column; font-size: 1.5vh;">
 	<div style="margin: 0;" id="hdr">
 		<input id="imei" type="text" name="imei"
-		 size="16" maxlength="16" placeholder="Enter IMEI"
-		 autocomplete="off" onkeyup="handleKey(event)">
-		<input type="button" id="send" name="send" value="Send"
-		 onclick="sendIMEI(false)" disabled>
-		<input type="button" id="clear" name="clear" value="Clear"
-		 onclick="sendIMEI(true)" disabled>
-		<span id="subslist"></span>
+		 size="16" maxlength="16" placeholder="Enter or click to choose"
+		 list="imeilst"
+		 oninput ="change(this)" onkeyup="handleKey(event)" />
+		<datalist id="imeilst"></datalist>
+		<input type="button" id="clear" name="clear" value="x"
+		 title="Clear input (Click on empty input shows avaliable choices)"
+		 onclick="erase(this)" />
+		<input type="button" id="subunsub" name="subunsub" value="+"
+		 title="Unsubscribe from events from IMEI"
+		 onclick="buttonpress(this)" />
+		<input type="button" id="refresh" name="refresh" value="Refresh"
+		 title="Send request to refresh location"
+		 onclick="buttonpress(this)" />
+		<input id="msgtxt" type="text" name="msgtxt"
+		 size="80" maxlength="80" placeholder="Input message text"
+		 onkeyup="handleKey(event)" />
+		<input type="button" id="message" name="message" value="Send"
+		 title="Send message"
+		 onclick="buttonpress(this)" />
+		<input type="button" id="poweroff" name="poweroff" value="Off"
+		 title="Send request to power off"
+		 style="background: red;"
+		 onclick="buttonpress(this)" />
+		<br />
 	</div>
 	<div style="flex-grow: 1;" id="map"></div>
 	<div style="display: flex; flex-direction: row; width: 100%;">
 		<div id="sts" style="flex: none;"></div>
 		| <div id="devstatus" style="flex: auto;"></div>
 		| <div id="tstamp" style="flex: auto;"></div>
-		| <div id="about" style="flex: none; font-size: 2.0vmin;">
+		| <div id="about" style="flex: none; font-size: 1.5vmin;">
 			<a href="http://www.average.org/loctrkd/">
 				http://www.average.org/loctrkd/</a></div>
 	</div>
