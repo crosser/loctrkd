@@ -48,6 +48,7 @@ __all__ = (
     "Respond",
 )
 
+MODNAME = __name__.split(".")[-1]
 PROTO_PREFIX: str = "ZX:"
 
 ### Deframer ###
@@ -369,8 +370,8 @@ class _GPS_POSITIONING(GPS303Pkt):
         ttup = (tup[0] % 100,) + tup[1:6]
         return pack("BBBBBB", *ttup)
 
-    def rectified(self) -> CoordReport:  # JSON-able dict
-        return CoordReport(
+    def rectified(self) -> Tuple[str, CoordReport]:  # JSON-able dict
+        return MODNAME, CoordReport(
             devtime=str(self.devtime),
             battery_percentage=None,
             accuracy=None,
@@ -419,8 +420,8 @@ class STATUS(GPS303Pkt):
     def out_encode(self) -> bytes:  # Set interval in minutes
         return pack("B", self.upload_interval)
 
-    def rectified(self) -> StatusReport:
-        return StatusReport(battery_percentage=self.batt)
+    def rectified(self) -> Tuple[str, StatusReport]:
+        return MODNAME, StatusReport(battery_percentage=self.batt)
 
 
 class HIBERNATION(GPS303Pkt):  # Server can send to send devicee to sleep
@@ -500,8 +501,8 @@ class _WIFI_POSITIONING(GPS303Pkt):
             ]
         )
 
-    def rectified(self) -> HintReport:
-        return HintReport(
+    def rectified(self) -> Tuple[str, HintReport]:
+        return MODNAME, HintReport(
             devtime=str(self.devtime),
             battery_percentage=None,
             mcc=self.mcc,
@@ -895,3 +896,9 @@ def exposed_protos() -> List[Tuple[str, bool]]:
         for cls in CLASSES.values()
         if hasattr(cls, "rectified")
     ]
+
+
+def make_response(cmd: str, imei: str, **kwargs: Any) -> Optional[GPS303Pkt]:
+    if cmd == "poweroff":
+        return HIBERNATION.Out()
+    return None

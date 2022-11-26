@@ -43,6 +43,7 @@ __all__ = (
     "Respond",
 )
 
+MODNAME = __name__.split(".")[-1]
 PROTO_PREFIX = "BS:"
 
 ### Deframer ###
@@ -380,12 +381,12 @@ class _LOC_DATA(BeeSurePkt):
         self.latitude = p.lat * p.nors
         self.longitude = p.lon * p.eorw
 
-    def rectified(self) -> Report:
+    def rectified(self) -> Tuple[str, Report]:
         # self.gps_valid is supposed to mean it, but it does not. Perfectly
         # good looking coordinates, with ten satellites, still get 'V'.
         # I suspect that in reality, 'A' means "hint data is absent".
         if self.gps_valid or self.num_of_sats > 3:
-            return CoordReport(
+            return MODNAME, CoordReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
                 accuracy=self.positioning_accuracy,
@@ -396,7 +397,7 @@ class _LOC_DATA(BeeSurePkt):
                 longitude=self.longitude,
             )
         else:
-            return HintReport(
+            return MODNAME, HintReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
                 mcc=self.mcc,
@@ -679,3 +680,13 @@ def exposed_protos() -> List[Tuple[str, bool]]:
         for cls in CLASSES.values()
         if hasattr(cls, "rectified")
     ]
+
+
+def make_response(cmd: str, imei: str, **kwargs: Any) -> Optional[BeeSurePkt]:
+    if cmd == "poweroff":
+        return POWEROFF.Out()
+    elif cmd == "refresh":
+        return MONITOR.Out()
+    elif cmd == "message":
+        return MESSAGE.Out(message=kwargs.get("txt", "Hello"))
+    return None

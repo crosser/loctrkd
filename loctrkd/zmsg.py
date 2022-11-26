@@ -173,18 +173,21 @@ class Resp(_Zmsg):
 
 
 class Rept(_Zmsg):
-    """Broadcast Zzmq message with "rectified" proto-agnostic json data"""
+    """Broadcast zmq message with "rectified" proto-agnostic json data"""
 
-    KWARGS = (("imei", None), ("payload", ""))
+    KWARGS = (("imei", None), ("payload", ""), ("pmod", None))
 
     @property
     def packed(self) -> bytes:
         return (
             pack(
-                "16s",
-                "0000000000000000"
+                "16s16s",
+                b"0000000000000000"
                 if self.imei is None
                 else self.imei.encode(),
+                b"                "
+                if self.pmod is None
+                else self.pmod.encode(),
             )
             + self.payload.encode()
         )
@@ -194,4 +197,8 @@ class Rept(_Zmsg):
         self.imei = (
             None if imei == b"0000000000000000" else imei.decode().strip("\0")
         )
-        self.payload = buffer[16:].decode()
+        pmod = buffer[16:32]
+        self.pmod = (
+            None if pmod == b"                " else pmod.decode().strip("\0")
+        )
+        self.payload = buffer[32:].decode()

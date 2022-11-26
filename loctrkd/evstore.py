@@ -3,7 +3,7 @@
 from datetime import datetime
 from json import dumps, loads
 from sqlite3 import connect, OperationalError, Row
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 __all__ = "fetch", "initdb", "stow", "stowloc"
 
@@ -25,6 +25,10 @@ SCHEMA = (
     latitude real,
     longitude real,
     remainder text
+)""",
+    """create table if not exists pmodmap (
+    imei text not null unique,
+    pmod text not null
 )""",
 )
 
@@ -86,6 +90,17 @@ def stowloc(**kwargs: Dict[str, Any]) -> None:
     DB.commit()
 
 
+def stowpmod(imei: str, pmod: str) -> None:
+    assert DB is not None
+    DB.execute(
+        """insert or replace into pmodmap
+                (imei, pmod) values (:imei, :pmod)
+        """,
+        {"imei": imei, "pmod": pmod},
+    )
+    DB.commit()
+
+
 def fetch(imei: str, backlog: int) -> List[Dict[str, Any]]:
     assert DB is not None
     cur = DB.cursor()
@@ -103,3 +118,15 @@ def fetch(imei: str, backlog: int) -> List[Dict[str, Any]]:
         result.append(dic)
     cur.close()
     return list(reversed(result))
+
+
+def fetchpmod(imei: str) -> Optional[Any]:
+    assert DB is not None
+    ret = None
+    cur = DB.cursor()
+    cur.execute("select pmod from pmodmap where imei = ?", (imei,))
+    result = cur.fetchone()
+    if result:
+        ret = result[0]
+    cur.close()
+    return ret

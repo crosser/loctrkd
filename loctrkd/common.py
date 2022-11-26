@@ -11,7 +11,7 @@ from sys import argv, stderr, stdout
 from typing import Any, cast, Dict, List, Optional, Tuple, Union
 from types import SimpleNamespace
 
-from .protomodule import ProtoModule
+from .protomodule import ProtoClass, ProtoModule
 
 CONF = "/etc/loctrkd.conf"
 pmods: List[ProtoModule] = []
@@ -69,6 +69,22 @@ def pmod_for_proto(proto: str) -> Optional[ProtoModule]:
         if pmod.proto_handled(proto):
             return pmod
     return None
+
+
+def pmod_by_name(pmodname: str) -> Optional[ProtoModule]:
+    for pmod in pmods:
+        if pmod.__name__.split(".")[-1] == pmodname:
+            return pmod
+    return None
+
+
+def make_response(
+    pmodname: str, cmd: str, imei: str, **kwargs: Any
+) -> Optional[ProtoClass.Out]:
+    pmod = pmod_by_name(pmodname)
+    if pmod is None:
+        return None
+    return pmod.make_response(cmd, imei, **kwargs)
 
 
 def parse_message(proto: str, packet: bytes, is_incoming: bool = True) -> Any:

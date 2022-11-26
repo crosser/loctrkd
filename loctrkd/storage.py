@@ -7,7 +7,7 @@ from logging import getLogger
 import zmq
 
 from . import common
-from .evstore import initdb, stow, stowloc
+from .evstore import initdb, stow, stowloc, stowpmod
 from .zmsg import Bcast, Rept
 
 log = getLogger("loctrkd/storage")
@@ -64,6 +64,8 @@ def runserver(conf: ConfigParser) -> None:
                             rept = Rept(zrep.recv(zmq.NOBLOCK))
                         except zmq.Again:
                             break
+                        if rept.imei is not None and rept.pmod is not None:
+                            stowpmod(rept.imei, rept.pmod)
                         data = loads(rept.payload)
                         log.debug("R IMEI %s %s", rept.imei, data)
                         if data.pop("type") == "location":

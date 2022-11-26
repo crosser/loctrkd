@@ -122,6 +122,8 @@ class ProtoClass(Protocol, metaclass=_MetaProto):
 
 
 class ProtoModule:
+    __name__: str
+
     class Stream:
         def recv(self, segment: bytes) -> List[Union[bytes, str]]:
             ...
@@ -170,4 +172,10 @@ class ProtoModule:
 
     @staticmethod
     def class_by_prefix(prefix: str) -> Union[Type[ProtoClass], List[str]]:
+        ...
+
+    @staticmethod
+    def make_response(
+        cmd: str, imei: str, **kwargs: Any
+    ) -> Optional[ProtoClass.Out]:
         ...
