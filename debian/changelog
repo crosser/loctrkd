@@ -1,3 +1,9 @@
+loctrkd (1.97) experimental; urgency=medium
+
+  * Change reporting of pmod to events
+
+ -- Eugene Crosser <crosser@average.org>  Sun, 27 Nov 2022 23:08:07 +0100
+
 loctrkd (1.96) experimental; urgency=medium
 
   * Send backlog only the the ws client that requested
