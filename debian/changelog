@@ -1,3 +1,11 @@
+loctrkd (1.96) experimental; urgency=medium
+
+  * Send backlog only the the ws client that requested
+  * Implement sending commands from the web interface
+  * webdemo: implement sending cmds to the terminal
+
+ -- Eugene Crosser <crosser@average.org>  Sun, 27 Nov 2022 21:21:04 +0100
+
 loctrkd (1.95) experimental; urgency=medium
 
   * beesure: implement a few more server commands
