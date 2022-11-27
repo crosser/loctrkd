@@ -73,7 +73,7 @@ def pmod_for_proto(proto: str) -> Optional[ProtoModule]:
 
 def pmod_by_name(pmodname: str) -> Optional[ProtoModule]:
     for pmod in pmods:
-        if pmod.__name__.split(".")[-1] == pmodname:
+        if pmod.PMODNAME == pmodname:
             return pmod
     return None
 

@@ -43,7 +43,7 @@ __all__ = (
     "Respond",
 )
 
-MODNAME = __name__.split(".")[-1]
+PMODNAME = __name__.split(".")[-1]
 PROTO_PREFIX = "BS:"
 
 ### Deframer ###
@@ -381,12 +381,12 @@ class _LOC_DATA(BeeSurePkt):
         self.latitude = p.lat * p.nors
         self.longitude = p.lon * p.eorw
 
-    def rectified(self) -> Tuple[str, Report]:
+    def rectified(self) -> Report:
         # self.gps_valid is supposed to mean it, but it does not. Perfectly
         # good looking coordinates, with ten satellites, still get 'V'.
         # I suspect that in reality, 'A' means "hint data is absent".
         if self.gps_valid or self.num_of_sats > 3:
-            return MODNAME, CoordReport(
+            return CoordReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
                 accuracy=self.positioning_accuracy,
@@ -397,7 +397,7 @@ class _LOC_DATA(BeeSurePkt):
                 longitude=self.longitude,
             )
         else:
-            return MODNAME, HintReport(
+            return HintReport(
                 devtime=str(self.devtime),
                 battery_percentage=self.battery_percentage,
                 mcc=self.mcc,

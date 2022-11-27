@@ -68,12 +68,10 @@ def runserver(conf: ConfigParser) -> None:
                 datetime.fromtimestamp(zmsg.when).astimezone(tz=timezone.utc),
                 msg,
             )
-            pmod, rect = msg.rectified()
+            rect = msg.rectified()
             log.debug("rectified: %s", rect)
             if isinstance(rect, (CoordReport, StatusReport)):
-                zpub.send(
-                    Rept(imei=zmsg.imei, pmod=pmod, payload=rect.json).packed
-                )
+                zpub.send(Rept(imei=zmsg.imei, payload=rect.json).packed)
             elif isinstance(rect, HintReport):
                 try:
                     lat, lon, acc = qry.lookup(

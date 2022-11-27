@@ -223,6 +223,7 @@ def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
                             zpub.send(
                                 Bcast(
                                     proto=proto,
+                                    pmod=pmod.PMODNAME,
                                     imei=imei,
                                     when=when,
                                     peeraddr=peeraddr,
@@ -255,8 +256,9 @@ def runserver(conf: ConfigParser, handle_hibernate: bool = True) -> None:
                         Bcast(
                             is_incoming=False,
                             proto=rpmod.proto_of_message(zmsg.packet),
-                            when=zmsg.when,
+                            pmod=pmod.PMODNAME,
                             imei=zmsg.imei,
+                            when=zmsg.when,
                             packet=zmsg.packet,
                         ).packed
                     )

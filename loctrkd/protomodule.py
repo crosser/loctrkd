@@ -122,7 +122,7 @@ class ProtoClass(Protocol, metaclass=_MetaProto):
 
 
 class ProtoModule:
-    __name__: str
+    PMODNAME: str
 
     class Stream:
         def recv(self, segment: bytes) -> List[Union[bytes, str]]:

@@ -110,6 +110,7 @@ class Bcast(_Zmsg):
     KWARGS = (
         ("is_incoming", True),
         ("proto", "UNKNOWN"),
+        ("pmod", None),
         ("imei", None),
         ("when", None),
         ("peeraddr", None),
@@ -120,28 +121,36 @@ class Bcast(_Zmsg):
     def packed(self) -> bytes:
         return (
             pack(
-                "!B16s16sd",
+                "!B16s16sd16s",
                 int(self.is_incoming),
                 self.proto[:16].ljust(16, "\0").encode(),
                 b"0000000000000000"
                 if self.imei is None
                 else self.imei.encode(),
                 0 if self.when is None else self.when,
+                b"                "
+                if self.pmod is None
+                else self.pmod.encode(),
             )
             + pack_peer(self.peeraddr)
             + self.packet
         )
 
     def decode(self, buffer: bytes) -> None:
-        is_incoming, proto, imei, when = unpack("!B16s16sd", buffer[:41])
+        is_incoming, proto, imei, when, pmod = unpack(
+            "!B16s16sd16s", buffer[:57]
+        )
         self.is_incoming = bool(is_incoming)
         self.proto = proto.decode().rstrip("\0")
         self.imei = (
             None if imei == b"0000000000000000" else imei.decode().strip("\0")
         )
         self.when = when
-        self.peeraddr = unpack_peer(buffer[41:59])
-        self.packet = buffer[59:]
+        self.pmod = (
+            None if pmod == b"                " else pmod.decode().strip("\0")
+        )
+        self.peeraddr = unpack_peer(buffer[57:75])
+        self.packet = buffer[75:]
 
 
 class Resp(_Zmsg):
@@ -175,19 +184,16 @@ class Resp(_Zmsg):
 class Rept(_Zmsg):
     """Broadcast zmq message with "rectified" proto-agnostic json data"""
 
-    KWARGS = (("imei", None), ("payload", ""), ("pmod", None))
+    KWARGS = (("imei", None), ("payload", ""))
 
     @property
     def packed(self) -> bytes:
         return (
             pack(
-                "16s16s",
+                "16s",
                 b"0000000000000000"
                 if self.imei is None
                 else self.imei.encode(),
-                b"                "
-                if self.pmod is None
-                else self.pmod.encode(),
             )
             + self.payload.encode()
         )
@@ -197,8 +203,4 @@ class Rept(_Zmsg):
         self.imei = (
             None if imei == b"0000000000000000" else imei.decode().strip("\0")
         )
-        pmod = buffer[16:32]
-        self.pmod = (
-            None if pmod == b"                " else pmod.decode().strip("\0")
-        )
-        self.payload = buffer[32:].decode()
+        self.payload = buffer[16:].decode()

@@ -14,6 +14,7 @@ log = getLogger("loctrkd/storage")
 
 
 def runserver(conf: ConfigParser) -> None:
+    stowevents = conf.getboolean("storage", "events", fallback=False)
     dbname = conf.get("storage", "dbfn")
     log.info('Using Sqlite3 database "%s"', dbname)
     initdb(dbname)
@@ -21,8 +22,7 @@ def runserver(conf: ConfigParser) -> None:
     zctx = zmq.Context()  # type: ignore
     zraw = zctx.socket(zmq.SUB)  # type: ignore
     zraw.connect(conf.get("collector", "publishurl"))
-    if conf.getboolean("storage", "events", fallback=False):
-        zraw.setsockopt(zmq.SUBSCRIBE, b"")
+    zraw.setsockopt(zmq.SUBSCRIBE, b"")
     zrep = zctx.socket(zmq.SUB)  # type: ignore
     zrep.connect(conf.get("rectifier", "publishurl"))
     zrep.setsockopt(zmq.SUBSCRIBE, b"")
@@ -41,31 +41,33 @@ def runserver(conf: ConfigParser) -> None:
                         except zmq.Again:
                             break
                         log.debug(
-                            "%s IMEI %s from %s at %s: %s",
+                            "%s IMEI %s from %s at %s %s: %s",
                             "I" if zmsg.is_incoming else "O",
                             zmsg.imei,
                             zmsg.peeraddr,
+                            zmsg.pmod,
                             datetime.fromtimestamp(zmsg.when).astimezone(
                                 tz=timezone.utc
                             ),
                             zmsg.packet.hex(),
                         )
-                        stow(
-                            is_incoming=zmsg.is_incoming,
-                            peeraddr=str(zmsg.peeraddr),
-                            when=zmsg.when,
-                            imei=zmsg.imei,
-                            proto=zmsg.proto,
-                            packet=zmsg.packet,
-                        )
+                        if zmsg.imei is not None and zmsg.pmod is not None:
+                            stowpmod(zmsg.imei, zmsg.pmod)
+                        if stowevents:
+                            stow(
+                                is_incoming=zmsg.is_incoming,
+                                peeraddr=str(zmsg.peeraddr),
+                                when=zmsg.when,
+                                imei=zmsg.imei,
+                                proto=zmsg.proto,
+                                packet=zmsg.packet,
+                            )
                 elif sk is zrep:
                     while True:
                         try:
                             rept = Rept(zrep.recv(zmq.NOBLOCK))
                         except zmq.Again:
                             break
-                        if rept.imei is not None and rept.pmod is not None:
-                            stowpmod(rept.imei, rept.pmod)
                         data = loads(rept.payload)
                         log.debug("R IMEI %s %s", rept.imei, data)
                         if data.pop("type") == "location":
