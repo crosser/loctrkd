@@ -17,10 +17,10 @@ There also exists an
 that supports multiple types of trackers.
 
 When powered up, the module makes TCP connection to the configured
-(via SMS) server, identifies itself (with IMEI) in the first message,
+(via SMS) server, identifies itself (with IMEI),
 and continues to send periodic messages with location and other status
 updates. Some of these messages require a response from the server.
-In particular, when the module has no GPS coverage, it sends information
+In particular, when zx303 has no GPS coverage, it sends information
 about nearby GSM+ cell towers and WiFi access points, to which the server
 is expected to respond with a message containing approximate location
 derived from this data. To do that, the server may need to consult with
@@ -46,28 +46,38 @@ that talk to each other over Zeromq:
   response (most of them are about configuring various settings in
   the terminal, hence the name), and sends responses to the collector
   for relaying to the terminal,
-- **lookaside** that subscribes to "rough" location messages, queries
+- **rectifier** that subscribes to "rough" location messages, queries
   an external source (in our implementation, either google maps "API",
-  or a local opencellid database), and prepares responses with
-  approximated location, and
+  or a local opencellid database), optionally sends a response with
+  approximated location, and publishes (original or rectified) location
+  report reformatted in a unified way, and
 - **wsgateway** that is a websockets server that translates messages
   between our internal zeromq bus and websocket clients, i.e. web
   pages. This daemon is also capable of responding to http with
   a single html file. This functionality is mainly for debugging.
   Users of the package are expected to implement their own web
-  application that communicates with this server.
+  application that communicates with this server. It also have a
+  capability to send a limited number of commands entered via the web
+  interface back to the terminal.
 
 There is also a command-line tool to send messages to the terminal.
-A number of useful actions can be initiated in this way.
 
 ## Configuring the Terminal
 
 Send SMS to the telephone number of the SIM card plugged in the terminal,
 with the text
 
-```
-server#<your_server_address>#<port>#
-```
+* for zx303:
+  ```
+  server#<your_server_address>#<port>#
+  ```
+* for D99:
+  ```
+  pw,123456,ip,<your_server_address>,<port>#
+  ```
+
+"123456" is the default password on that kind of trackers, that you can
+change. If "123456" does not work, try "523681".
 
 Server address may be FQDN or a literal IP address. Port is a number;
 by default, this application listens on the port 4303. A different
@@ -84,11 +94,14 @@ Websockets server communicates with the web page using json encoded
 text messages. The only supported message from the web page to the
 server is subscription message. Recognised elements are:
 
-- **type** - a string that must be "subscribe"
-- **backlog** - an integer specifying how many previous locations to
-  send for the start. Limit is per-imei.
-- **imei** - a list of 16-character strings with IMEIs of the
-  tracker terminals to watch.
+- **type** - a string "subscribe", or a command for the terminal.
+- **backlog** - for "subscribe, an integer specifying how many
+  previous locations to send for the start. Limit is per-imei.
+- **imei** - for "subscribe", a list of 10- or 16-character strings
+  with IMEIs of the tracker terminals to watch, for other commands -
+  IMEI of the particular tracker.
+- **txt** - for "msg" command, text of the message to send to the
+  terminal, in UTF-8.
 
 Each subscription request nullifies preexisting list of IMEIs
 associated with the web client, and replaces it with the list supplied
@@ -131,7 +144,7 @@ Example of a status message
  "battery": 46}
 ```
 
-## Lookaside service
+## Rectifier service
 
 When the terminal has no gps reception, it uses secondary sources of
 location hints: list of nearby cell towers, and list of MAC addresses
@@ -151,7 +164,7 @@ month, and then all queries are fulfilled locally. Note that opencellid
 data does not contain WiFi access points, so the approximation will
 less accurate.
 
-Lookaside service can be configured to use either of the options by
+Rectifier service can be configured to use either of the options by
 assigning `backend = opencellid` or `backend = googlemaps` in the
 configuration file (`/etc/loctrkd.conf` by default). Then, the path to
 the file with the auth token needs to be specified in the `[opencellid]`
