@@ -28,7 +28,8 @@ SCHEMA = (
 )""",
     """create table if not exists pmodmap (
     imei text not null unique,
-    pmod text not null
+    pmod text not null,
+    tstamp real not null default (unixepoch())
 )""",
 )
 
@@ -37,8 +38,25 @@ def initdb(dbname: str) -> None:
     global DB
     DB = connect(dbname)
     DB.row_factory = Row
+    need_populate_pmodmap = False
+    try:
+        DB.execute("select count(pmod) from pmodmap")
+        try:
+            DB.execute("select count(tstamp) from pmodmap")
+        except OperationalError:
+            need_populate_pmodmap = True
+            DB.execute("alter table pmodmap rename to old_pmodmap")
+    except OperationalError:
+        pass  # DB was empty
     for stmt in SCHEMA:
         DB.execute(stmt)
+    if need_populate_pmodmap:
+        DB.execute(
+            """insert into pmodmap(imei, pmod)
+               select imei, pmod from old_pmodmap"""
+        )
+        DB.execute("drop table old_pmodmap")
+        DB.commit()
 
 
 def stow(**kwargs: Any) -> None:
@@ -124,7 +142,11 @@ def fetchpmod(imei: str) -> Optional[Any]:
     assert DB is not None
     ret = None
     cur = DB.cursor()
-    cur.execute("select pmod from pmodmap where imei = ?", (imei,))
+    cur.execute(
+        """select pmod from pmodmap where imei = ?
+           and tstamp > unixepoch() - 3600.0""",
+        (imei,),
+    )
     result = cur.fetchone()
     if result:
         ret = result[0]
