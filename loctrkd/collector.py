@@ -44,7 +44,7 @@ class Client:
         else:
             rest = b""
         if rest:
-            log.warning(
+            log.info(
                 "%d bytes in buffer on close: %s", len(rest), rest[:64].hex()
             )
 
@@ -85,7 +85,7 @@ class Client:
             if isinstance(elem, bytes):
                 msgs.append((when, self.addr, elem))
             else:
-                log.warning(
+                log.info(
                     "%s from fd %d (IMEI %s)",
                     elem,
                     self.sock.fileno(),

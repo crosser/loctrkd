@@ -4,7 +4,7 @@ from configparser import ConfigParser, SectionProxy
 from contextlib import closing, ExitStack
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from importlib import import_module
-from logging import DEBUG, StreamHandler
+from logging import DEBUG, StreamHandler, WARNING
 from multiprocessing import Process
 from os import kill, unlink
 from signal import SIGINT
@@ -79,6 +79,8 @@ class TestWithServers(TestCase):
             if verbose:
                 cls.log.addHandler(StreamHandler(stderr))
                 cls.log.setLevel(DEBUG)
+            else:
+                cls.log.setLevel(WARNING)
             p = Process(target=cls.runserver, args=(self.conf,), kwargs=kwargs)
             p.start()
             self.children.append((srvname, p))
@@ -96,17 +98,17 @@ class TestWithServers(TestCase):
             p.start()
             self.children.append(("httpd", p))
         sleep(1)
+        for srvname, p in self.children:
+            self.assertTrue(
+                p.is_alive(),
+                f"{srvname} did not start, exit code {p.exitcode}",
+            )
 
     def tearDown(self) -> None:
         for srvname, p in self.children:
             if p.pid is not None:
                 kill(p.pid, SIGINT)
             p.join()
-            self.assertEqual(
-                p.exitcode,
-                0,
-                f"{srvname} terminated with return code {p.exitcode}",
-            )
         for sfx in (
             "",
             ".pub",
@@ -119,6 +121,12 @@ class TestWithServers(TestCase):
                 unlink(self.tmpfilebase + sfx)
             except OSError:
                 pass
+        for srvname, p in self.children:
+            self.assertEqual(
+                p.exitcode,
+                0,
+                f"{srvname} terminated with exit code {p.exitcode}",
+            )
 
 
 class Fuzz(TestWithServers):
