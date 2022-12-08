@@ -29,7 +29,7 @@ SCHEMA = (
     """create table if not exists pmodmap (
     imei text not null unique,
     pmod text not null,
-    tstamp real not null default (unixepoch())
+    tstamp real not null default (strftime('%s'))
 )""",
 )
 
@@ -144,7 +144,7 @@ def fetchpmod(imei: str) -> Optional[Any]:
     cur = DB.cursor()
     cur.execute(
         """select pmod from pmodmap where imei = ?
-           and tstamp > unixepoch() - 3600.0""",
+           and tstamp > strftime('%s') - 3600.0""",
         (imei,),
     )
     result = cur.fetchone()
