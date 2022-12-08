@@ -1,3 +1,13 @@
+loctrkd (1.98) experimental; urgency=medium
+
+  * Ignore pmod registrations older than an hour
+  * Update README for two-protocol support
+  * Update man pages to use correct name
+  * Fix test when servers crash; less logging
+  * evstore: do not use unixepoch() - for older sqlite
+
+ -- Eugene Crosser <crosser@average.org>  Thu, 08 Dec 2022 13:00:56 +0100
+
 loctrkd (1.97) experimental; urgency=medium
 
   * Change reporting of pmod to events
