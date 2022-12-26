@@ -1,3 +1,9 @@
+loctrkd (2.00) experimental; urgency=medium
+
+  * Release 2.00 without changes
+
+ -- Eugene Crosser <crosser@average.org>  Mon, 26 Dec 2022 16:27:10 +0100
+
 loctrkd (1.98) experimental; urgency=medium
 
   * Ignore pmod registrations older than an hour
